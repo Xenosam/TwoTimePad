@@ -8,7 +8,7 @@
  * File:   main.cpp
  * Author: Andrew
  *
- * Created on 26 October 2017, 21:54
+ * Created on 22 October 2017, 13:54
  */
 
 #include <cstdlib>

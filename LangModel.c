@@ -12,12 +12,31 @@
 
 /* Function Declaration */
 void makeModel(char *filename[]);
+void peel();
 
 /* Globals */
 
 int main()
 {
     
+}
+
+void peel() {
+    char tString1[][][];
+    char tString2[][][];
+    double tProbability[][];
+    
+    int *tSp1 = tString1[0][0][0];
+    int *tSp2 = tString2[0][0][0];
+    int *tPp = tProbability[0][0];
+    
+    char fString1[][][];
+    char fString2[][][];
+    double fProbability[][];
+    
+    int *fSp1 = fString1[0][0][0];
+    int *fSp2 = fString2[0][0][0];
+    int *fPp = fProbability[0][0];
 }
 
 void makeModel(char *filename[]) {
