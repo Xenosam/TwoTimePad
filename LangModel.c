@@ -11,7 +11,7 @@
 #define MAX_STRING_LEN 80
 
 /* Function Declaration */
-void makeModel(char *filename[]);
+void makeModel(int bound);
 void peel();
 
 /* Globals */
@@ -39,7 +39,11 @@ void peel() {
     int *fPp = fProbability[0][0];
 }
 
-void makeModel(char *filename[]) {
-    FILE *fopen(filename, 'r');
-    
+void makeModel(int bound) {
+    //Make new Model File
+   FILE *fp = fopen("model.txt", "ab+");
+   char nlabel = "N-Gram = " + bound;
+   fputs(nlabel, *fp);
+   
+   
 }
