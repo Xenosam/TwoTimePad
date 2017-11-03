@@ -93,18 +93,22 @@ int makeModel() {
 	
 	if(dp != NULL) {
 		while(ep = readdir(dp)) {
-			file = fopen(ep->d_name, "r");
-			while ((c = getc(file)) != EOF){
-				if(bool != 0) {
-					Model.model[old][c]++;
-				} else {
+			if(ep->d_name == "." || ep->d_name == "..") {
+                            printf("PASS");
+			} else {	
+                            file = fopen(ep->d_name, "r");
+                            while ((c = getc(file)) != EOF){
+                            	if(bool != 0) {
+                            		Model.model[old][c]++;
+                            	} else {
 					bool = 1;
 				}
 				putchar(c);
 				Model.count = Model.count + 1;
 				old = c;
-			}
-			bool = 0;
+                            }
+                            bool = 0;
+                        }
 		}	
 		(void)closedir(dp);
 		return 1;
