@@ -31,7 +31,7 @@ int main() {
 				fclose(f);*/
 				//memset(file, '\0', sizeof(file));
 				strcpy(file, add);
-				strcpy(file, ep->d_name);
+				strcat(file, ep->d_name);
 				f = fopen(file, "r");
 				puts(file);
 				if(f) {
