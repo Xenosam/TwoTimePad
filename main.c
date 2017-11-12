@@ -11,6 +11,7 @@
  * Created on 27 October 2017, 00:26
  */
 
+ //##INCLUDES##
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -19,7 +20,7 @@
 #include <unistd.h>
 #include <errno.h>
 #include <stdbool.h>
-
+//##DEFINES##
 #define MAX_SIZE 256
 
 //##STRUCT DECLARATIONS##
@@ -32,7 +33,7 @@ struct structModel{
 
 struct HashItem {
 	//Struct to keep key(ngram) and data(occurance) together
-	int key;
+	unsigned char *key;
 	int data;
 };
 
@@ -45,27 +46,56 @@ struct node {
 	struct HashItem *list[MAX_SIZE];
 };
 
+//##METHOD DECLERATIONS##
 int makeModel();
 int examine(struct structModel Model); 
-int hash(int key); 
-void insert(int key, int data);
+int hash(unsigned char *str); 
+void insert(unsigned char *key, struct node **leaf);
  
+//##GLOBALS##
+struct node *root = NULL; 
  
+//##METHODS##
+/*
+	
+*/
 int main(int argc, char** argv) {
 	printf("%i", makeModel());
     return (EXIT_SUCCESS);
 }
 
-void insert(int key, int data) {
-	int searchval = hash(key);
+/*
 	
+*/
+void insert(unsigned char *key, struct node **leaf) {
+	int searchval = hash(key);
+	if( *leaf == 0) {
+		*leaf = (struct node*) malloc(sizeof(struct node));
+		
+	}
 }
 
-int hash(int key) {
-	//GOOD HASHING ALGORITHM
-	return key;
+/*
+	djb2 Hash: http://www.cse.yorku.ca/~oz/hash.html
+*/
+int hash(unsigned char *str)
+{
+	unsigned long hash = 5381;
+	int out;
+	int c;
+
+    while (c = *str++)
+        hash = ((hash << 5) + hash) + c; /* hash * 33 + c */
+	
+	//MAX_SIZE = amount of buckets
+	out = hash % MAX_SIZE;
+	
+    return out;
 }
 
+/*
+	
+*/
 int examine(struct structModel Model) {
 	for(int x = 32; x<256; x++) {
 		for(int y = 32; y<256; y++) {
@@ -77,6 +107,9 @@ int examine(struct structModel Model) {
 	}
 } 
 
+/*
+	
+*/
 int makeModel() {
 	int gate = 0;
 	int c, old;
@@ -125,4 +158,3 @@ int makeModel() {
     
 	return 0;
 }
-
