@@ -32,13 +32,13 @@ struct structModel{
 };
 
 struct HashItem {
-	//Struct to keep key(ngram) and data(occurance) together
-	unsigned char *key;
+	//Struct to keep searchval(ngram) and data(occurance) together
+	unsigned char *searchval;
 	int data;
 };
 
 struct node {
-	//Node for tree, key_value = hash(key)
+	//Node for tree, key_value = hash(searchval)
 	//maintains a sorted array of HashItems
 	int key_value;
 	struct node *left;
@@ -47,17 +47,20 @@ struct node {
 };
 
 //##METHOD DECLERATIONS##
-int makeModel();
+int makeModel(int n);
 int examine(struct structModel Model); 
 int hash(unsigned char *str); 
-void insert(unsigned char *key, struct node **leaf);
+void insertTree(unsigned char *str, int hashval, struct node **leaf);
+void insertArray(unsigned char *str, struct HashItem list[]);
+struct node *searchTree(int searchval, struct node *leaf);
+struct HashItem *searchArray(int key, struct HashItem list[]);
  
 //##GLOBALS##
-struct node *root = NULL; 
+struct node *root = 0; 
  
 //##METHODS##
 /*
-	
+	MAIN: Runs makemodel() then exits
 */
 int main(int argc, char** argv) {
 	printf("%i", makeModel());
@@ -65,14 +68,62 @@ int main(int argc, char** argv) {
 }
 
 /*
-	
+	Inserts a node into the architecture and 
+	initializes it.
 */
-void insert(unsigned char *key, struct node **leaf) {
-	int searchval = hash(key);
+void insertTree(unsigned char *str, int hashval, struct node **leaf) {
 	if( *leaf == 0) {
 		*leaf = (struct node*) malloc(sizeof(struct node));
-		
+		(*leaf) -> key_value = hashval;
+		//(*leaf) -> list[0] = newItem;
+		(*leaf) -> left = 0;
+		(*leaf) -> right = 0;
+	} else if(hashval < (*leaf)->key_value) {
+		insertTree(str, hashval, &(*leaf)->left);
+	} else if(hashval > (*leaf)->key_value) {
+		insertTree(str, hashval, &(*leaf)->right);
+	} else {
+		//ERROR
 	}
+}
+
+/*
+	Binary search item, if it exists data++
+	if not insert and add data = 1
+*/
+void insertArray(unsigned char *str, struct HashItem list[]) {
+	
+}
+
+/*
+	Searches the tree for a given hash value
+*/
+struct node *searchTree(int searchval, struct node *leaf)
+{
+	if( leaf != 0 )
+	{
+		if(searchval==leaf->key_value)
+		{
+			// Search leaf -> list;
+			return leaf;
+		}
+		else if(searchval<leaf->key_value)
+		{
+			return searchTree(searchval, leaf->left);
+		}
+		else
+		{
+			return searchTree(searchval, leaf->right);
+		}
+	}
+	else return 0;
+}
+
+/*
+	IMPLEMENT BINARY SEARCH
+*/
+struct HashItem *searchArray(int key, struct HashItem list[]) {
+	return NULL;
 }
 
 /*
@@ -94,7 +145,8 @@ int hash(unsigned char *str)
 }
 
 /*
-	
+	x > 32 are command characters that arent worth evaluating
+	DEFUNT: Implementation of Hash Tree makes this redundant
 */
 int examine(struct structModel Model) {
 	for(int x = 32; x<256; x++) {
@@ -108,9 +160,11 @@ int examine(struct structModel Model) {
 } 
 
 /*
-	
+	TO-DO: NEEDS TO BE UPDATED FOR HASH TREE
+	MakeModel is for examining the files in the corpus folder
+	and building the language model
 */
-int makeModel() {
+int makeModel(int n) {
 	int gate = 0;
 	int c, old;
 	struct structModel Model;
