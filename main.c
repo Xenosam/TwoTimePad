@@ -54,6 +54,8 @@ void insertTree(unsigned char *str, int hashval, struct node **leaf);
 void insertArray(unsigned char *str, struct HashItem list[]);
 struct node *searchTree(int searchval, struct node *leaf);
 struct HashItem *searchArray(int key, struct HashItem list[]);
+int save(struct node root, unsigned char *filename);
+struct node load(unsigned char *filename);
  
 //##GLOBALS##
 struct node *root = 0; 
@@ -63,7 +65,7 @@ struct node *root = 0;
 	MAIN: Runs makemodel() then exits
 */
 int main(int argc, char** argv) {
-	printf("%i", makeModel());
+	printf("%i", makeModel(3));
     return (EXIT_SUCCESS);
 }
 
@@ -170,7 +172,7 @@ int makeModel(int n) {
 	struct structModel Model;
 	DIR *dp;
 	struct dirent *ep;
-	char add[] = "./corpus/";
+	char *add = "./corpus/";
 	char file[MAX_SIZE];
 	dp = opendir(add);
 	FILE *f;
@@ -211,4 +213,19 @@ int makeModel(int n) {
 	examine(Model);
     
 	return 0;
+}
+
+/*
+	Save current model to file
+*/
+int save(struct node root, unsigned char *filename) {
+	return 0;
+}
+
+/*
+	Load a previous model from file
+*/
+struct node load(unsigned char *filename) {
+	struct node root;
+	return root;
 }
