@@ -165,6 +165,7 @@ int hash(unsigned char *str)
 	TO-DO: NEEDS TO BE UPDATED FOR HASH TREE
 */
 int makeModel(int n) {
+	if(n < 3) {
 		perror("invalid value of n");
 		return 1;
 	}
