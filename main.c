@@ -23,14 +23,13 @@
 //##DEFINES##
 #define MAX_SIZE 256
 
-//##STRUCT DECLARATIONS##
-struct structModel{
-	//MODEL FOR TESTING BIGRAMS, ACTUAL IMPLEMENTATION WITH HASH TREE
-	//REMOVE LATER, NOW DEFUNCT
-	int model[256][256];
-	int count;
-};
+//##GLOBALS##
+	//Root for n model
+struct node *root = 0;
+	//Root for n-1 model 
+struct node *root2 = 0;
 
+//##STRUCT DECLARATIONS##
 struct HashItem {
 	//Struct to keep searchval(ngram) and data(occurance) together
 	unsigned char *searchval;
@@ -48,24 +47,25 @@ struct node {
 
 //##METHOD DECLERATIONS##
 int makeModel(int n);
-int examine(struct structModel Model); 
 int hash(unsigned char *str); 
 void insertTree(unsigned char *str, int hashval, struct node **leaf);
 void insertArray(unsigned char *str, struct HashItem list[]);
 struct node *searchTree(int searchval, struct node *leaf);
-struct HashItem *searchArray(int key, struct HashItem list[]);
-int save(struct node root, unsigned char *filename);
-struct node load(unsigned char *filename);
- 
-//##GLOBALS##
-struct node *root = 0; 
+struct HashItem *searchArray(unsigned char *str, struct HashItem list[]);
+int save(struct node root, struct node root2, unsigned char *filename);
+int load(unsigned char *filename);
  
 //##METHODS##
 /*
-	MAIN: Runs makemodel() then exits
+	MAIN: Runs makemodel() for the n model and then the n-1 model
 */
 int main(int argc, char** argv) {
-	printf("%i", makeModel(3));
+	//LOAD?
+	//N=3 FOR TESTING, REMOVE LATER: n = argv[1], if argc == 1 -> quit
+	int n = 3;
+	printf("%i", makeModel(n));
+	printf("%i", makeModel(n-1));
+	//SAVE?
     return (EXIT_SUCCESS);
 }
 
@@ -75,11 +75,15 @@ int main(int argc, char** argv) {
 */
 void insertTree(unsigned char *str, int hashval, struct node **leaf) {
 	if( *leaf == 0) {
+		//ALLOCATE
 		*leaf = (struct node*) malloc(sizeof(struct node));
+		//FILL NEW HASH VAL
 		(*leaf) -> key_value = hashval;
-		//(*leaf) -> list[0] = newItem;
+		//FILL NEW NODES
 		(*leaf) -> left = 0;
 		(*leaf) -> right = 0;
+		//FILL NEW ARRAY
+		insertArray(str, (*leaf) -> list[0]);
 	} else if(hashval < (*leaf)->key_value) {
 		insertTree(str, hashval, &(*leaf)->left);
 	} else if(hashval > (*leaf)->key_value) {
@@ -90,11 +94,18 @@ void insertTree(unsigned char *str, int hashval, struct node **leaf) {
 }
 
 /*
-	Binary search item, if it exists data++
+	TO-DO: Binary search item, if it exists data++
 	if not insert and add data = 1
 */
 void insertArray(unsigned char *str, struct HashItem list[]) {
-	
+	/*
+		Search Array for ngram
+			If ngram doesnt exists
+				Add key in correct place
+				data++
+			Else
+				data++
+*/
 }
 
 /*
@@ -124,11 +135,13 @@ struct node *searchTree(int searchval, struct node *leaf)
 /*
 	IMPLEMENT BINARY SEARCH
 */
-struct HashItem *searchArray(int key, struct HashItem list[]) {
+struct HashItem *searchArray(unsigned char *str, struct HashItem list[]) {
 	return NULL;
 }
 
 /*
+	Useful for using the input string to generate a hash value
+	using the djb2 hash system
 	djb2 Hash: http://www.cse.yorku.ca/~oz/hash.html
 */
 int hash(unsigned char *str)
@@ -147,85 +160,110 @@ int hash(unsigned char *str)
 }
 
 /*
-	x > 32 are command characters that arent worth evaluating
-	DEFUNT: Implementation of Hash Tree makes this redundant
-*/
-int examine(struct structModel Model) {
-	for(int x = 32; x<256; x++) {
-		for(int y = 32; y<256; y++) {
-			char cx = x;
-			char cy = y;
-			if(Model.model[x][y]>=1 && Model.model[x][y]<Model.count)
-				printf("%c + %c: %i\n", cx, cy, Model.model[x][y]);
-		}
-	}
-} 
-
-/*
-	TO-DO: NEEDS TO BE UPDATED FOR HASH TREE
 	MakeModel is for examining the files in the corpus folder
 	and building the language model
+	TO-DO: NEEDS TO BE UPDATED FOR HASH TREE
 */
 int makeModel(int n) {
+		perror("invalid value of n");
+		return 1;
+	}
+	//VARIABLES
 	int gate = 0;
 	int c, old;
-	struct structModel Model;
+	char ngram[n];
+	//TREE MANAGEMENT
+	struct node *newNode = (struct node*) malloc(sizeof(struct node));
+	struct HashItem *newItem = (struct HashItem*) malloc(sizeof(struct HashItem));
+	int hashval;
+	//FILE MANAGEMENT
 	DIR *dp;
 	struct dirent *ep;
 	char *add = "./corpus/";
 	char file[MAX_SIZE];
 	dp = opendir(add);
 	FILE *f;
+	//MAX_SIZE ^= n;
 	
+	//Check if directory exists
 	if(dp != NULL) {
+		//While loops for each file in a directory
 		while(ep = readdir(dp)) {
+			//Skips "." and ".." in the loop
 			if(strcmp(".",ep->d_name) == 0 || strcmp("..",ep->d_name) == 0){
 				continue;
 			}else {
+				//opens file
 				strcpy(file, add);
 				strcat(file, ep->d_name);
 				f = fopen(file, "r");
 				puts(file);
 				if(f) {
+					//while loops for each character until end of file(EOF)
 					while ((c = getc(f)) != EOF){
 						//##EDIT INSIDE THIS WHILE LOOP##
-						if(gate != 0) {
-							Model.model[old][c]++;
+						if(gate > n - 2) {
+							if(n != n - 1) {
+								//ngram[0] = ngram[1] ... ngram[n-2] = ngram[n-1] & ngram[n-1] = c
+							} else {
+								continue;
+							}
+							
+							//Search Tree for hash node of ngram
+							hashval = hash(ngram);
+							newNode = searchTree(hashval, root);
+							
+							//If it doesnt exist create new hash node, Add key at 0, data++
+							if (newNode == 0) {
+								//void insertTree(unsigned char *str, int hashval, struct node **leaf);
+								insertTree(ngram, hashval, &root);
+							} else {
+								//Search Array for ngram
+								//struct HashItem *searchArray(int key, struct HashItem list[]);
+								newItem = searchArray(ngram, *newNode->list);
+							}
 						} else {
-							gate = 1;
+							ngram[n] = c;
+							gate++;
 						}
-						putchar(c);
-						Model.count = Model.count + 1;
-						old = c;
+						// OUTPUT: putchar(c);
 					}
 				} else {
 					printf("FAILED PASS\n");
 				}	
+				//Close File
 				fclose(f);
 			}
 		}
+		//Close Directory
 		(void)closedir(dp);
 	} else {
-		perror("bwaaa bwaaaaaaah");
+		perror("Cannot find directory!");
 		return 1;
 	}
 	
-	examine(Model);
+	//examine(Model);
     
 	return 0;
 }
 
 /*
-	Save current model to file
+	Save current model to file:
+	
+	Root: Root node for n model
+	Root2: Root node for n-1 model
+	filename: Filename to save as
+	
+	TO-DO: Iterate through root in order and save to file
 */
-int save(struct node root, unsigned char *filename) {
+int save(struct node root, struct node root2, unsigned char *filename) {
 	return 0;
 }
 
 /*
 	Load a previous model from file
+	TO-DO: read in file in order and build tree structure
 */
-struct node load(unsigned char *filename) {
-	struct node root;
-	return root;
+int load(unsigned char *filename) {
+	return 0;
 }
