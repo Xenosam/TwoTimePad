@@ -31,8 +31,8 @@ struct node *root2 = 0;
 
 //##STRUCT DECLARATIONS##
 struct HashItem {
-	//Struct to keep searchval(ngram) and data(occurance) together
-	unsigned char *searchval;
+	//Struct to keep key(ngram) and data(occurance) together
+	unsigned char *key;
 	int data;
 };
 
@@ -70,6 +70,51 @@ int main(int argc, char** argv) {
 }
 
 /*
+	TO-DO: Binary search item, if it exists data++
+	if not insert and add data = 1
+*/
+void insertArray(unsigned char *str, struct HashItem list[]) {
+	//Search Array for ngram
+	struct HashItem *newItem; 
+	newItem = searchArray(str, list);
+	//If ngram doesnt exists
+	if(newItem == 0) {
+		//Add key in correct place data++
+	} else {
+		//data++
+		if(newItem -> data > 0) {
+			newItem -> data++;
+		} else {
+			newItem -> data = 1;
+		}
+	}
+}
+
+/*
+	IMPLEMENT BINARY SEARCH
+*/
+struct HashItem *searchArray(unsigned char *str, struct HashItem list[]) {
+	int size;/* = sizeof(list) / sizeof(list[0]);*/
+	int bottom= 0;
+    int mid;
+    int top = size - 1;
+	
+    while(bottom <= top){
+        mid = (bottom + top)/2;
+        if (strcmp(list[mid].key, str) == 0){
+            //FOUND;
+            return 0;
+        } else if (strcmp(list[mid].key, str) > 0){
+            top = mid - 1;
+        } else if (strcmp(list[mid].key, str) < 0){
+            bottom = mid + 1;
+        } else {
+			return 0;
+		}
+    }
+}
+
+/*
 	Inserts a node into the architecture and 
 	initializes it.
 */
@@ -94,21 +139,6 @@ void insertTree(unsigned char *str, int hashval, struct node **leaf) {
 }
 
 /*
-	TO-DO: Binary search item, if it exists data++
-	if not insert and add data = 1
-*/
-void insertArray(unsigned char *str, struct HashItem list[]) {
-	/*
-		Search Array for ngram
-			If ngram doesnt exists
-				Add key in correct place
-				data++
-			Else
-				data++
-*/
-}
-
-/*
 	Searches the tree for a given hash value
 */
 struct node *searchTree(int searchval, struct node *leaf)
@@ -117,7 +147,6 @@ struct node *searchTree(int searchval, struct node *leaf)
 	{
 		if(searchval==leaf->key_value)
 		{
-			// Search leaf -> list;
 			return leaf;
 		}
 		else if(searchval<leaf->key_value)
@@ -130,13 +159,6 @@ struct node *searchTree(int searchval, struct node *leaf)
 		}
 	}
 	else return 0;
-}
-
-/*
-	IMPLEMENT BINARY SEARCH
-*/
-struct HashItem *searchArray(unsigned char *str, struct HashItem list[]) {
-	return NULL;
 }
 
 /*
@@ -171,7 +193,7 @@ int makeModel(int n) {
 	}
 	//VARIABLES
 	int gate = 0;
-	int c, old;
+	int c, old, i;
 	char ngram[n];
 	//TREE MANAGEMENT
 	struct node *newNode = (struct node*) malloc(sizeof(struct node));
@@ -184,7 +206,6 @@ int makeModel(int n) {
 	char file[MAX_SIZE];
 	dp = opendir(add);
 	FILE *f;
-	//MAX_SIZE ^= n;
 	
 	//Check if directory exists
 	if(dp != NULL) {
@@ -204,12 +225,17 @@ int makeModel(int n) {
 					while ((c = getc(f)) != EOF){
 						//##EDIT INSIDE THIS WHILE LOOP##
 						if(gate > n - 2) {
-							if(n != n - 1) {
-								//ngram[0] = ngram[1] ... ngram[n-2] = ngram[n-1] & ngram[n-1] = c
-							} else {
+							if(gate != n - 1) {
+								gate++;
 								continue;
+							} else {
+								//ngramw[0] = ngram[1] ... ngram[n-2] = ngram[n-1] & ngram[n-1] = c
+								for(i = 0; i < n - 1; i++) {
+									ngram[i] = ngram[i + 1];
+								}
+								ngram[n-1] = c;
+								//OUTPUT: printf("%s", ngram);
 							}
-							
 							//Search Tree for hash node of ngram
 							hashval = hash(ngram);
 							newNode = searchTree(hashval, root);
@@ -224,13 +250,15 @@ int makeModel(int n) {
 								newItem = searchArray(ngram, *newNode->list);
 							}
 						} else {
+							//FILL NGRAM UNTIL FULL
 							ngram[n] = c;
 							gate++;
 						}
-						// OUTPUT: putchar(c);
+					// OUTPUT: putchar(c);
 					}
 				} else {
-					printf("FAILED PASS\n");
+					perror("FAILED PASS");
+					return 1;
 				}	
 				//Close File
 				fclose(f);
@@ -242,9 +270,6 @@ int makeModel(int n) {
 		perror("Cannot find directory!");
 		return 1;
 	}
-	
-	//examine(Model);
-    
 	return 0;
 }
 
