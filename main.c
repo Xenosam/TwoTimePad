@@ -84,29 +84,32 @@ void insertArray(unsigned char *str, struct HashItem list[]) {
 		//data++
 		if(newItem -> data > 0) {
 			newItem -> data++;
-		} else {
+		} else 
+			//INCASE == NULL
 			newItem -> data = 1;
 		}
 	}
 }
 
 /*
-	IMPLEMENT BINARY SEARCH
+	Binary searches an array using strcmp() outputting a pointer to
+	the HashItem
 */
 struct HashItem *searchArray(unsigned char *str, struct HashItem list[]) {
-	int size;/* = sizeof(list) / sizeof(list[0]);*/
+	int size = sizeof(&list) / sizeof(&list[0]);
 	int bottom= 0;
     int mid;
     int top = size - 1;
+	struct HashItem *out;
 	
     while(bottom <= top){
         mid = (bottom + top)/2;
-        if (strcmp(list[mid].key, str) == 0){
-            //FOUND;
-            return 0;
-        } else if (strcmp(list[mid].key, str) > 0){
+		*out = list[mid];
+        if (strcmp(out->key, str) == 0){
+            return out;
+        } else if (strcmp(out->key, str) > 0){
             top = mid - 1;
-        } else if (strcmp(list[mid].key, str) < 0){
+        } else if (strcmp(out->key, str) < 0){
             bottom = mid + 1;
         } else {
 			return 0;
