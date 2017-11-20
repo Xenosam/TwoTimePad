@@ -43,6 +43,7 @@ struct node {
 	struct node *left;
 	struct node *right;
 	struct HashItem *list[MAX_SIZE];
+	int list_size;
 };
 
 //##METHOD DECLERATIONS##
@@ -79,12 +80,20 @@ void insertArray(unsigned char *str, struct HashItem list[]) {
 	newItem = searchArray(str, list);
 	//If ngram doesnt exists
 	if(newItem == 0) {
-		//Add key in correct place data++
+		newItem -> key = str;
+		newItem -> data = 1;
+		for(int i = 0; i < MAX_SIZE; i++) {
+			struct HashItem *plist;
+			plist = &list[i];
+			if(plist != NULL) {
+				list[i] = *newItem;
+			}
+		}
 	} else {
 		//data++
 		if(newItem -> data > 0) {
 			newItem -> data++;
-		} else 
+		} else { 
 			//INCASE == NULL
 			newItem -> data = 1;
 		}
@@ -132,6 +141,8 @@ void insertTree(unsigned char *str, int hashval, struct node **leaf) {
 		(*leaf) -> right = 0;
 		//FILL NEW ARRAY
 		insertArray(str, (*leaf) -> list[0]);
+		//ADD SIZE 0
+		//(*leaf) -> list_size = 0;
 	} else if(hashval < (*leaf)->key_value) {
 		insertTree(str, hashval, &(*leaf)->left);
 	} else if(hashval > (*leaf)->key_value) {
