@@ -50,12 +50,12 @@ struct node {
 int makeModel(int n);
 int hash(unsigned char *str); 
 void insertTree(unsigned char *str, int hashval, struct node **leaf);
-void insertArray(unsigned char *str, struct HashItem list[]);
+void insertArray(unsigned char *str, struct node *Node);
 struct node *searchTree(int searchval, struct node *leaf);
-struct HashItem *searchArray(unsigned char *str, struct HashItem list[]);
-int save(struct node root, struct node root2, unsigned char *filename);
+struct HashItem *searchArray(unsigned char *str, struct node *Node);
+int save(struct node *root, unsigned char *filename);
 int load(unsigned char *filename);
- 
+
 //##METHODS##
 /*
 	MAIN: Runs makemodel() for the n model and then the n-1 model
@@ -64,31 +64,37 @@ int main(int argc, char** argv) {
 	//LOAD?
 	//N=3 FOR TESTING, REMOVE LATER: n = argv[1], if argc == 1 -> quit
 	int n = 3;
-	printf("%i", makeModel(n));
-	printf("%i", makeModel(n-1));
-	//SAVE?
-    return (EXIT_SUCCESS);
+	if(n < 2) {
+		perror("invalid value of n");
+		return 1;
+	} else {
+		printf("%i", makeModel(n));
+		printf("%i", makeModel(n-1));
+		//SAVE?
+		save(root, "modeln");
+		save(root2, "modeln2");
+	}
+	return (EXIT_SUCCESS);
 }
 
 /*
 	TO-DO: Binary search item, if it exists data++
 	if not insert and add data = 1
 */
-void insertArray(unsigned char *str, struct HashItem list[]) {
+void insertArray(unsigned char *str, struct node *Node) {
 	//Search Array for ngram
+	int size = Node -> list_size;
+	struct HashItem *list;
+	list = *Node -> list;
 	struct HashItem *newItem; 
-	newItem = searchArray(str, list);
+	newItem = searchArray(str, Node);
 	//If ngram doesnt exists
 	if(newItem == 0) {
 		newItem -> key = str;
 		newItem -> data = 1;
-		for(int i = 0; i < MAX_SIZE; i++) {
-			struct HashItem *plist;
-			plist = &list[i];
-			if(plist != NULL) {
-				list[i] = *newItem;
-			}
-		}
+		list[size] = *newItem;
+		Node -> list_size++;
+		//NEED TO ADD SORT HERE, preferably good as its O(N) atm
 	} else {
 		//data++
 		if(newItem -> data > 0) {
@@ -104,12 +110,14 @@ void insertArray(unsigned char *str, struct HashItem list[]) {
 	Binary searches an array using strcmp() outputting a pointer to
 	the HashItem
 */
-struct HashItem *searchArray(unsigned char *str, struct HashItem list[]) {
-	int size = sizeof(&list) / sizeof(&list[0]);
+struct HashItem *searchArray(unsigned char *str, struct node *Node) {
+	int size = Node -> list_size;
 	int bottom= 0;
     int mid;
     int top = size - 1;
 	struct HashItem *out;
+	struct HashItem *list;
+	list = *Node -> list;
 	
     while(bottom <= top){
         mid = (bottom + top)/2;
@@ -131,7 +139,9 @@ struct HashItem *searchArray(unsigned char *str, struct HashItem list[]) {
 	initializes it.
 */
 void insertTree(unsigned char *str, int hashval, struct node **leaf) {
+	puts("INSERT TREE");
 	if( *leaf == 0) {
+		puts("IF");
 		//ALLOCATE
 		*leaf = (struct node*) malloc(sizeof(struct node));
 		//FILL NEW HASH VAL
@@ -140,12 +150,14 @@ void insertTree(unsigned char *str, int hashval, struct node **leaf) {
 		(*leaf) -> left = 0;
 		(*leaf) -> right = 0;
 		//FILL NEW ARRAY
-		insertArray(str, (*leaf) -> list[0]);
+		insertArray(str, *leaf);
 		//ADD SIZE 0
 		//(*leaf) -> list_size = 0;
 	} else if(hashval < (*leaf)->key_value) {
+		puts("ELSE IF <");
 		insertTree(str, hashval, &(*leaf)->left);
 	} else if(hashval > (*leaf)->key_value) {
+		puts("ELSE IF >");
 		insertTree(str, hashval, &(*leaf)->right);
 	} else {
 		//ERROR
@@ -157,19 +169,15 @@ void insertTree(unsigned char *str, int hashval, struct node **leaf) {
 */
 struct node *searchTree(int searchval, struct node *leaf)
 {
+	puts("SEARCH TREE");
 	if( leaf != 0 )
 	{
-		if(searchval==leaf->key_value)
-		{
+		if(searchval == leaf -> key_value) {
 			return leaf;
-		}
-		else if(searchval<leaf->key_value)
-		{
-			return searchTree(searchval, leaf->left);
-		}
-		else
-		{
-			return searchTree(searchval, leaf->right);
+		} else if(searchval < leaf -> key_value) {
+			return searchTree(searchval, leaf -> left);
+		} else {
+			return searchTree(searchval, leaf -> right);
 		}
 	}
 	else return 0;
@@ -201,13 +209,9 @@ int hash(unsigned char *str)
 	TO-DO: NEEDS TO BE UPDATED FOR HASH TREE
 */
 int makeModel(int n) {
-	if(n < 3) {
-		perror("invalid value of n");
-		return 1;
-	}
 	//VARIABLES
 	int gate = 0;
-	int c, old, i;
+	int c, old;
 	char ngram[n];
 	//TREE MANAGEMENT
 	struct node *newNode = (struct node*) malloc(sizeof(struct node));
@@ -235,33 +239,43 @@ int makeModel(int n) {
 				f = fopen(file, "r");
 				puts(file);
 				if(f) {
+					puts("OPENED FILE");
 					//while loops for each character until end of file(EOF)
 					while ((c = getc(f)) != EOF){
 						//##EDIT INSIDE THIS WHILE LOOP##
-						if(gate > n - 2) {
-							if(gate != n - 1) {
+						puts("WHILE");
+						if(gate >= n - 1) {
+							if(gate == n - 1) {
+								puts("IF");
 								gate++;
 								continue;
 							} else {
+								puts("ELSE");
 								//ngramw[0] = ngram[1] ... ngram[n-2] = ngram[n-1] & ngram[n-1] = c
-								for(i = 0; i < n - 1; i++) {
+								for(int i = 0; i < n - 1; i++) {
+									puts("FOR");
 									ngram[i] = ngram[i + 1];
-								}
+								}	
 								ngram[n-1] = c;
-								//OUTPUT: printf("%s", ngram);
+								//OUTPUT: puts(ngram);
 							}
 							//Search Tree for hash node of ngram
 							hashval = hash(ngram);
+							puts("HASH");
 							newNode = searchTree(hashval, root);
-							
+							puts("SEARCHED");
 							//If it doesnt exist create new hash node, Add key at 0, data++
 							if (newNode == 0) {
+								puts("IF2");
 								//void insertTree(unsigned char *str, int hashval, struct node **leaf);
 								insertTree(ngram, hashval, &root);
+								puts("INSERTED");
 							} else {
+								puts("ELSE2");
 								//Search Array for ngram
 								//struct HashItem *searchArray(int key, struct HashItem list[]);
-								newItem = searchArray(ngram, *newNode->list);
+								newItem = searchArray(ngram, newNode);
+								puts("SEARCHED2");
 							}
 						} else {
 							//FILL NGRAM UNTIL FULL
@@ -296,7 +310,24 @@ int makeModel(int n) {
 	
 	TO-DO: Iterate through root in order and save to file
 */
-int save(struct node root, struct node root2, unsigned char *filename) {
+int save(struct node *root, unsigned char *filename) {
+	//FILE IO
+	FILE *f;
+	f = fopen(filename, "a");
+	struct node *Node;
+	Node = root;
+	while(Node != 0) {			
+		//OUTPUT HASH VALUE
+		fprintf(f, "%i\n", Node -> key_value);
+		for(int i = 0; i < Node -> list_size; i++) {
+			fprintf(f, "%c\n", Node -> list[i] -> key);
+			fprintf(f, "%i\n", Node -> list[i] -> data);
+		}
+		//FOR EACH ITEM IN LIST, OUTPUT KEY AND DATA
+	}
+	fclose(f);
+	save(Node -> left, filename);
+	save(Node -> right, filename);
 	return 0;
 }
 
@@ -305,5 +336,8 @@ int save(struct node root, struct node root2, unsigned char *filename) {
 	TO-DO: read in file in order and build tree structure
 */
 int load(unsigned char *filename) {
+	//READ IN HASH VALUE
+	//UNTIL NEXT HASH DUMP INTO LIST A HASH ITEM
+	//HASH ITEM = (KEY, DATA)
 	return 0;
 }
