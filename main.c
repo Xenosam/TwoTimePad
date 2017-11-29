@@ -20,6 +20,7 @@
 #include <unistd.h>
 #include <errno.h>
 #include <stdbool.h>
+#include <math.h>
 //##DEFINES##
 #define MAX_SIZE 256
 
@@ -48,7 +49,7 @@ struct node {
 
 //##METHOD DECLERATIONS##
 int makeModel(int n);
-int hash(unsigned char *str); 
+int hash(unsigned char *str, int n); 
 void insertTree(unsigned char *str, int hashval, struct node **leaf);
 void insertArray(unsigned char *str, struct node *Node);
 struct node *searchTree(int searchval, struct node *leaf);
@@ -82,25 +83,48 @@ int main(int argc, char** argv) {
 	if not insert and add data = 1
 */
 void insertArray(unsigned char *str, struct node *Node) {
+	puts("INSERT ARRAY");
 	//Search Array for ngram
 	int size = Node -> list_size;
-	struct HashItem *list;
-	list = *Node -> list;
+	//struct HashItem *list;
+	//list = *Node -> list;
 	struct HashItem *newItem; 
 	newItem = searchArray(str, Node);
 	//If ngram doesnt exists
 	if(newItem == 0) {
+		puts("IF: IA");
+		newItem = (struct HashItem*) malloc(sizeof(struct HashItem));
 		newItem -> key = str;
 		newItem -> data = 1;
-		list[size] = *newItem;
+		
+		if(Node -> list_size > 1) {
+			//NEED TO ADD SORT HERE
+			int i = 0;
+			int j;
+			while(strcmp(Node -> list[i] -> key,str) < 0) {
+				i++;
+			}
+			j = size;
+			while(j > i) {
+				Node -> list[j] = Node -> list[j - 1];
+				j--;
+			}
+			Node -> list[i] = newItem;
+		} else {
+			puts(">1");
+			Node -> list[size] = newItem;
+		}
 		Node -> list_size++;
-		//NEED TO ADD SORT HERE, preferably good as its O(N) atm
+		
 	} else {
+		puts("E: IA");
 		//data++
 		if(newItem -> data > 0) {
+			puts("E-IF: IA");
 			newItem -> data++;
 		} else { 
 			//INCASE == NULL
+			puts("E-E: IA");
 			newItem -> data = 1;
 		}
 	}
@@ -111,6 +135,7 @@ void insertArray(unsigned char *str, struct node *Node) {
 	the HashItem
 */
 struct HashItem *searchArray(unsigned char *str, struct node *Node) {
+	puts("SEARCH ARRAY");
 	int size = Node -> list_size;
 	int bottom= 0;
     int mid;
@@ -121,7 +146,7 @@ struct HashItem *searchArray(unsigned char *str, struct node *Node) {
 	
     while(bottom <= top){
         mid = (bottom + top)/2;
-		*out = list[mid];
+		out = Node -> list[mid];
         if (strcmp(out->key, str) == 0){
             return out;
         } else if (strcmp(out->key, str) > 0){
@@ -149,10 +174,11 @@ void insertTree(unsigned char *str, int hashval, struct node **leaf) {
 		//FILL NEW NODES
 		(*leaf) -> left = 0;
 		(*leaf) -> right = 0;
+		//ADD SIZE 0
+		(*leaf) -> list_size = 0;
 		//FILL NEW ARRAY
 		insertArray(str, *leaf);
-		//ADD SIZE 0
-		//(*leaf) -> list_size = 0;
+		
 	} else if(hashval < (*leaf)->key_value) {
 		puts("ELSE IF <");
 		insertTree(str, hashval, &(*leaf)->left);
@@ -188,7 +214,7 @@ struct node *searchTree(int searchval, struct node *leaf)
 	using the djb2 hash system
 	djb2 Hash: http://www.cse.yorku.ca/~oz/hash.html
 */
-int hash(unsigned char *str)
+int hash(unsigned char *str, int n)
 {
 	unsigned long hash = 5381;
 	int out;
@@ -198,7 +224,7 @@ int hash(unsigned char *str)
         hash = ((hash << 5) + hash) + c; /* hash * 33 + c */
 	
 	//MAX_SIZE = amount of buckets
-	out = hash % MAX_SIZE;
+	out = hash % (int)pow((double)MAX_SIZE,(double)n);
 	
     return out;
 }
@@ -242,47 +268,49 @@ int makeModel(int n) {
 					puts("OPENED FILE");
 					//while loops for each character until end of file(EOF)
 					while ((c = getc(f)) != EOF){
-						//##EDIT INSIDE THIS WHILE LOOP##
-						puts("WHILE");
-						if(gate >= n - 1) {
-							if(gate == n - 1) {
-								puts("IF");
+						if(c > 31 ) {
+							//##EDIT INSIDE THIS WHILE LOOP##
+							puts("WHILE");
+							if(gate >= n - 1) {
+								if(gate == n - 1) {
+									puts("IF");
+									gate++;
+								} else {
+									puts("ELSE");
+									//ngramw[0] = ngram[1] ... ngram[n-2] = ngram[n-1] & ngram[n-1] = c
+									for(int i = 0; i < n - 1; i++) {
+										puts("FOR");
+										ngram[i] = ngram[i + 1];
+									}	
+									ngram[n-1] = c;
+									//OUTPUT: puts(ngram);
+								}
+								//Search Tree for hash node of ngram
+								hashval = hash(ngram, n);
+								puts("HASH");
+								newNode = searchTree(hashval, root);
+								puts("SEARCHED");
+								//If it doesnt exist create new hash node, Add key at 0, data++
+								if (newNode == 0) {
+									puts("IF2");
+									//void insertTree(unsigned char *str, int hashval, struct node **leaf);
+									insertTree(ngram, hashval, &root);
+									puts("INSERTED");
+								} else {
+									puts("ELSE2");
+									//Search Array for ngram
+									//struct HashItem *searchArray(int key, struct HashItem list[]);
+									newItem = searchArray(ngram, newNode);
+									puts("SEARCHED2");
+								}
+							} else {
+								//FILL NGRAM UNTIL FULL
+								ngram[n] = c;
 								gate++;
-								continue;
-							} else {
-								puts("ELSE");
-								//ngramw[0] = ngram[1] ... ngram[n-2] = ngram[n-1] & ngram[n-1] = c
-								for(int i = 0; i < n - 1; i++) {
-									puts("FOR");
-									ngram[i] = ngram[i + 1];
-								}	
-								ngram[n-1] = c;
-								//OUTPUT: puts(ngram);
 							}
-							//Search Tree for hash node of ngram
-							hashval = hash(ngram);
-							puts("HASH");
-							newNode = searchTree(hashval, root);
-							puts("SEARCHED");
-							//If it doesnt exist create new hash node, Add key at 0, data++
-							if (newNode == 0) {
-								puts("IF2");
-								//void insertTree(unsigned char *str, int hashval, struct node **leaf);
-								insertTree(ngram, hashval, &root);
-								puts("INSERTED");
-							} else {
-								puts("ELSE2");
-								//Search Array for ngram
-								//struct HashItem *searchArray(int key, struct HashItem list[]);
-								newItem = searchArray(ngram, newNode);
-								puts("SEARCHED2");
-							}
-						} else {
-							//FILL NGRAM UNTIL FULL
-							ngram[n] = c;
-							gate++;
 						}
-					// OUTPUT: putchar(c);
+					// OUTPUT: 
+					putchar(c);
 					}
 				} else {
 					perror("FAILED PASS");
