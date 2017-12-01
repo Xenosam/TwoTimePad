@@ -4,7 +4,7 @@
 
 struct bigram make_model();
 void examine(struct bigram Model);
-struct bigram lagrange(struct bigram Model);
+struct bigram laplace(struct bigram Model);
 void examineToFile(struct bigram Model, char *filename);
 
 struct bigram {
@@ -19,10 +19,10 @@ int main(int argc, char** argv) {
 	examine(Model);
 	examineToFile(Model, "./nosmooth.txt");
 	//SMOOTHING
-	Model = lagrange(Model);
+	Model = laplace(Model);
 	//EXAMINE
 	examine(Model);
-	examineToFile(Model, "./smooth.txt");
+	examineToFile(Model, "./smooth.txt");*/
 	//RETURN
 	return 1;
 }
@@ -54,8 +54,8 @@ struct bigram make_model() {
     return Model;
 }
 
-struct bigram lagrange(struct bigram Model) {
-	puts("LAGRANGE\n");
+struct bigram laplace(struct bigram Model) {
+	puts("LAPLACE\n");
 	for(int i = 0; i < SIZE; i++){
 		for(int j = 0; j < SIZE; j++) {
 			Model.model[j][i]++;
@@ -72,10 +72,11 @@ void examine(struct bigram Model) {
 			printf("'(%c,%c)' OR '(%i,%i)' %i\n", (j + num), (i + num), (j + num), (i + num), Model.model[j][i]);
 		}
 	}
+	printf("%i\n", Model.count);
 }
 
 void examineToFile(struct bigram Model, char *filename) {
-	puts("EXAMINE\n");
+	puts("EXAMINE TO FILE\n");
 	FILE *f;
 	f = fopen(filename,"a");
 	int num = 256 - SIZE;
@@ -84,5 +85,6 @@ void examineToFile(struct bigram Model, char *filename) {
 			fprintf(f,"'(%c,%c)' OR '(%i,%i)' %i\n", (j + num), (i + num), (j + num), (i + num), Model.model[j][i]);
 		}
 	}
+	printf("%i\n", Model.count);
 	fclose(f);
 }
