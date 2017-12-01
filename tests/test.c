@@ -4,14 +4,61 @@
 #include <sys/types.h>
 #include <dirent.h>
 #include <unistd.h>
+#include <math.h>
 #include <errno.h>
 
 #define MAX_FILENAME 255
 
-struct structModel makeModelSingle(char fp[]);
-FILE makeModelDefault(); 
+struct HashItem {
+	//Struct to keep key(ngram) and data(occurance) together
+	unsigned char *key;
+	int data;
+};
 
 int main() {
+	int i;
+	double n = pow(256.0,8.0);
+	i = (int)n;
+	printf("%i", i);
+}
+/*
+	struct HashItem newItem;
+	newItem.key = "c";
+	newItem.data = 2;
+	struct HashItem newItem2;
+	newItem2.key = "d";
+	newItem2.data = 3;
+	
+	struct HashItem list[256];
+	struct HashItem *p;
+	
+	p = list;
+	
+	list[0] = newItem;
+	list[1] = newItem2;
+	
+	printf("%c\n", p[1].key);
+	printf("%c\n", newItem2.key);
+}
+*/
+	/*
+	struct structModel{
+		int model[256][256];
+		int count;
+	};
+
+		int examine(struct structModel Model) {
+			for(int x = 32; x<256; x++) {
+				for(int y = 32; y<256; y++) {
+					char cx = x;
+					char cy = y;
+					if(Model.model[x][y]>=1 && Model.model[x][y]<Model.count)
+						printf("%c + %c: %i\n", cx, cy, Model.model[x][y]);
+				}
+			}
+		} 
+	*/
+	/*
 	DIR *dp;
 	struct dirent *ep;
 	char add[] = "./corpus/";
@@ -48,7 +95,7 @@ int main() {
 		return 0;
 	}
 }
-
+*/
 /*
 
 	if(dp != NULL) {
@@ -77,7 +124,7 @@ int main() {
 		return 0;
 	}
 */
-
+/*
 FILE makeModelDefault() {
 	FILE *model;
 	model = fopen("C:/cygwin64/home/Andrew/LangModel/model.txt", "ab+");
@@ -107,4 +154,4 @@ struct structModel makeModelSingle(char fp[]) {
 	//fclose(model);
 	printf("%i", Model.count);
     return Model;
-}
+}*/
