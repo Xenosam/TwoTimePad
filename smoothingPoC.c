@@ -17,12 +17,12 @@ int main(int argc, char** argv) {
 	struct bigram Model = make_model();
 	//EXAMINE
 	examine(Model);
-	examineToFile(Model, "./nosmooth.txt");
+	examineToFile(Model, "./output/main/nosmooth.txt");
 	//SMOOTHING
 	Model = laplace(Model);
 	//EXAMINE
 	examine(Model);
-	examineToFile(Model, "./smooth.txt");*/
+	examineToFile(Model, "./output/smoothing/smooth.txt");
 	//RETURN
 	return 1;
 }
@@ -30,7 +30,7 @@ int main(int argc, char** argv) {
 struct bigram make_model() {
 	puts("MAKE MODEL");
 	FILE *file;
-	char *fp = "C:/cygwin64/home/Andrew/LangModel/corpus/A Tale of Two Cities - Charles Dickens.txt";
+	char *fp = "./corpus/A Tale of Two Cities - Charles Dickens.txt";
 	struct bigram Model;
 	file = fopen(fp, "r");
 	int c;

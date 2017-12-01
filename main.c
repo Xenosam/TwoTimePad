@@ -74,8 +74,8 @@ int main(int argc, char** argv) {
 		printf("%i", makeModel(n));
 		//printf("%i", makeModel(n-1));
 		//SAVE?
-		save(root, "modeln.txt");
-		//save(root2, "modeln2.txt");
+		save(root, "./output/main/modeln.txt");
+		//save(root2, "./output/main/modeln2.txt");
 	}
 	return (EXIT_SUCCESS);
 }
