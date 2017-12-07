@@ -1,3 +1,4 @@
+//##INCLUDES##
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -7,62 +8,72 @@
 #include <math.h>
 #include <errno.h>
 
-#define MAX_FILENAME 255
+//##DEFINES##
+#define MAX_SIZE 256
 
-struct HashItem {
-	//Struct to keep key(ngram) and data(occurance) together
-	unsigned char *key;
-	int data;
+//##STRUCTS##
+struct bigram {
+	int model[MAX_SIZE][MAX_SIZE];
+	int count;
 };
 
-int main() {
-	int i;
-	double n = pow(256.0,8.0);
-	i = (int)n;
-	printf("%i", i);
-}
-/*
-	struct HashItem newItem;
-	newItem.key = "c";
-	newItem.data = 2;
-	struct HashItem newItem2;
-	newItem2.key = "d";
-	newItem2.data = 3;
-	
-	struct HashItem list[256];
-	struct HashItem *p;
-	
-	p = list;
-	
-	list[0] = newItem;
-	list[1] = newItem2;
-	
-	printf("%c\n", p[1].key);
-	printf("%c\n", newItem2.key);
-}
-*/
-	/*
-	struct structModel{
-		int model[256][256];
-		int count;
-	};
+//##METHODS##
+int test1();
+int test2();
+int test3();
+int test4();
 
-		int examine(struct structModel Model) {
-			for(int x = 32; x<256; x++) {
-				for(int y = 32; y<256; y++) {
-					char cx = x;
-					char cy = y;
-					if(Model.model[x][y]>=1 && Model.model[x][y]<Model.count)
-						printf("%c + %c: %i\n", cx, cy, Model.model[x][y]);
-				}
-			}
-		} 
-	*/
-	/*
+//##GLOBALS##
+
+/*
+	Main Method for calling the tests:
+		0 = Success
+		1 = Failure
+		
+	Tree Tests have been moved out into Tree.c
+	Smoothing Tests have been moved out into Smoothing.c
+*/
+int main() {
+	int state;
+	
+	state = test1();
+	printf("Test1:%i\n", state);
+	state = test2();
+	printf("Test2:%i\n", state);
+	state = test3();
+	printf("Test3:%i\n", state);
+	state = test4();
+	printf("Test4:%i\n", state);
+}
+
+/*
+	READ FROM FILE
+*/
+int test1() {
+	FILE *f;
+	char *file = "../storage/A Tale of Two Cities - Charles Dickens.txt";
+	char c;
+	f = fopen(file, "r");
+	if(f) {
+		while ((c = getc(f)) != EOF){
+			putchar(c);
+		}
+	} else {
+		perror("FILE ERROR");
+		return 1;
+	}	
+	fclose(f);
+	return 0;
+}
+
+/*
+	READ FROM EACH FILE IN A DIRECTORY
+*/
+int test2() {
 	DIR *dp;
 	struct dirent *ep;
-	char add[] = "./corpus/";
-	char file[MAX_FILENAME];
+	char add[] = "../storage/";
+	char file[MAX_SIZE];
 	dp = opendir(add);
 	FILE *f;
 	char c;
@@ -70,9 +81,8 @@ int main() {
 	if(dp != NULL) {
 		while(ep = readdir(dp)) {
 			if(strcmp(".",ep->d_name) == 0 || strcmp("..",ep->d_name) == 0){
-				printf("PASS\n");
 				continue;
-			}else {
+			} else {
 				//puts(ep->d_name);
 				strcpy(file, add);
 				strcat(file, ep->d_name);
@@ -83,75 +93,97 @@ int main() {
 						putchar(c);
 					}
 				} else {
-					printf("FAILED PASS\n");
+					perror("FILE ERROR");
+					return 1;
 				}	
 				fclose(f);
 			}
 		}
 		(void)closedir(dp);
-		return 1;
 	} else {
-		perror("bwaaa bwaaaaaaah");
+		perror("DIRECTORY ERROR");
+		return 1;
+	}
+	printf("\n");
+	return 0;
+}
+
+/*
+	Shuffle characters around in the n-gram
+	Drop the least significant and add the next
+*/
+int test3() {
+	int n = 10;
+	char ngram[] = {'n','e','e','d','i','n','g','/','g','e'};
+	for(int i = 0; i < n - 1; i++) {
+		ngram[i] = ngram[i + 1];
+		printf("%s\n", ngram);
+	}
+	char c = 't';
+	ngram[n-1] = c;
+	ngram[n] = '\0';
+	printf("%s\n", ngram);
+	if(strcmp("eeding/get", ngram) == 0) {
 		return 0;
+	} else {
+		return 1;
 	}
 }
-*/
-/*
 
+/*
+	Writing into a model structure
+*/
+int test4() {
+	struct bigram Model;
+	DIR *dp;
+	struct dirent *ep;
+	char add[] = "../storage/";
+	char file[MAX_SIZE];
+	dp = opendir(add);
+	FILE *f;
+	int bool = 0;
+	char c, old;
+	
 	if(dp != NULL) {
 		while(ep = readdir(dp)) {
 			if(strcmp(".",ep->d_name) == 0 || strcmp("..",ep->d_name) == 0){
-				printf("PASS");
-			} else {	
-				file = fopen(ep->d_name, "r");
-				while ((c = getc(file)) != EOF){
-					if(bool != 0) {
-						Model.model[old][c]++;
-					} else {
-						bool = 1;
+				continue;
+			} else {
+				strcpy(file, add);
+				strcat(file, ep->d_name);
+				f = fopen(file, "r");
+				puts(file);
+				if(f) {
+					while ((c = getc(f)) != EOF){
+						if(c > 31){
+							if(bool != 0) {
+								Model.model[old][c]++;
+							} else {
+								bool = 1;
+							}
+							Model.count = Model.count + 1;
+							old = c;
+						}
 					}
-					putchar(c);
-					Model.count = Model.count + 1;
-					old = c;
-				}
-				bool = 0;
+					bool = 0;
+				} else {
+					perror("FILE ERROR");
+					return 1;
+				}	
+				fclose(f);
 			}
-		}	
+		}
 		(void)closedir(dp);
-		return 1;
 	} else {
-		perror("ERROR");
-		return 0;
+		perror("DIRECTORY ERROR");
+		return 1;
 	}
+	printf("\n");
+	return 0;
+}
+/*
+	Tests 5 and 6 were built into the smoothing.c file and extended as a proof of concept program
 */
 /*
-FILE makeModelDefault() {
-	FILE *model;
-	model = fopen("C:/cygwin64/home/Andrew/LangModel/model.txt", "ab+");
-	fprintf(model, "%c \n%c \n%c \n%c \n%c \n%c \n%c \n%c \n%c \n%c \n%c \n%c \n%c \n%c \n%c \n%c \n%c \n%c \n%c \n%c \n%c \n%c \n%c \n%c \n%c \n%c \n%c \n%c \n%c \n%c \n%c \n%c \n%c \n%c \n%c \n%c \n%c \n%c \n%c \n%c \n%c \n%c \n%c \n%c \n%c \n%c \n%c \n%c \n%c \n%c \n%c \n%c \n%c \n%c \n%c \n%c \n%c \n%c \n%c \n%c \n%c \n%c \n%c \n%c \n%c \n%c \n%c \n%c \n%c \n%c \n%c \n%c \n%c \n%c \n%c \n%c \n%c \n%c \n%c \n%c \n%c \n%c \n%c \n%c \n%c \n%c \n%c \n%c \n%c \n%c \n%c \n%c \n%c \n%c \n%c \n%c \n%c \n%c \n%c \n%c \n%c \n%c \n%c \n%c \n%c \n%c \n%c \n%c \n%c \n%c \n%c \n%c \n%c \n%c \n%c \n%c \n%c \n%c \n%c \n%c \n%c \n%c \n%c \n%c \n%c \n%c \n%c \n%c \n%c \n%c \n%c \n%c \n%c \n%c \n%c \n%c \n%c \n%c \n%c \n%c \n%c \n%c \n%c \n%c \n%c \n%c \n%c \n%c \n%c \n%c \n%c \n%c \n%c \n%c \n%c \n%c \n%c \n%c \n%c \n%c \n%c \n%c \n%c \n%c \n%c \n%c \n%c \n%c \n%c \n%c \n%c \n%c \n%c \n%c \n%c \n%c \n%c \n%c \n%c \n%c \n%c \n%c \n%c \n%c \n%c \n%c \n%c \n%c \n%c \n%c \n%c \n%c \n%c \n%c \n%c \n%c \n%c \n%c \n%c \n%c \n%c \n%c \n%c \n%c \n%c \n%c \n%c \n%c \n%c \n%c \n%c \n%c \n%c \n%c \n%c \n%c \n%c \n%c \n%c \n%c \n%c \n%c \n%c \n%c", 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48 , 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 91, 92, 93, 94, 95, 96, 97, 98, 99, 100, 101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111, 112, 113, 114, 115, 116, 117, 118, 119, 120, 121, 122, 123, 124, 125, 126, 127, 128, 129, 130, 131, 132, 133, 134, 135, 136, 137, 138, 139, 140, 141, 142, 143, 144, 145, 146, 147, 148 , 149, 150, 151, 152, 153, 154, 155, 156, 157, 158, 159, 160, 161, 162, 163, 164, 165, 166, 167, 168, 169, 170, 171, 172, 173, 174, 175, 176, 177, 178, 179, 180, 181, 182, 183, 184, 185, 186, 187, 188, 189, 190, 191, 192, 193, 194, 195, 196, 197, 198, 199, 200, 201, 202, 203, 204, 205, 206, 207, 208, 209, 210, 211, 212, 213, 214, 215, 216, 217, 218, 219, 220, 221, 222, 223, 224, 225, 226, 227, 228, 229, 230, 231, 232, 233, 234, 235, 236, 237, 238, 239, 240, 241, 242, 243, 244, 245, 246, 247, 248 , 249, 250, 251, 252, 253, 254, 255);
-	fclose(model);
-	return *model;
-}
-struct structModel makeModelSingle(char fp[]) {
-	FILE *file;
-	//FILE *model;
-	//model = fopen("C:/cygwin64/home/Andrew/LangModel/model.txt", "w");
-	struct structModel Model;
-	file = fopen(fp, "r");
-	int c;
-	int old;
-	if (file) {
-		while ((c = getc(file)) != EOF){
-			if(Model.count != 0) {
-				Model.model[old][c]++;
-			}
-			putchar(c);
-			Model.count = Model.count + 1;
-			old = c;
-		}	
-		fclose(file);
-	}
-	//fclose(model);
-	printf("%i", Model.count);
-    return Model;
-}*/
+	Tests 7 - 10 were built into the tree.c file and extended as a proof of concept program
+*/
