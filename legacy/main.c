@@ -223,7 +223,7 @@ int hash(char *str, int n)
 */
 int makeModel(int n) {
 	//VARIABLES
-	int gate = -3;
+	int gate = -1;
 	int count = 0;
 	int c, old;
 	char ngram[n];
