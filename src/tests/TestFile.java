@@ -2,6 +2,8 @@ package tests;
 
 import static org.junit.Assert.*;
 
+import java.io.IOException;
+
 import org.junit.Before;
 import org.junit.Test;
 
@@ -11,12 +13,11 @@ import project.LanguageModel;
 
 public class TestFile {
 
-	LanguageModel lm = new LanguageModel();
-	NGramProcessLM model = new NGramProcessLM(7);
+	NGramProcessLM model;
 	
 	@Before
 	public void setUp() throws Exception {
-		
+		model = LanguageModel.train(LanguageModel.createModel(3), "C:/Users/Andrew/workspace/TwoTimeNLM/corpus/A Tale of Two Cities - Charles Dickens.txt");
 	}
 	
 	/*
@@ -25,15 +26,15 @@ public class TestFile {
 	@Test
 	public void testOne() {
 		//assertEquals("String", $ExpectedOutcome, methodForTest());
-	    assertEquals("TEST1: Create Model", 7, LanguageModel.createModel(7).maxNGram());
+	    assertEquals("TEST1: Create Model", 3, model.maxNGram());
 	}
 	
 	/*
-	 * Recieves useful information from model
+	 * Recieves useful information from model and grabs the probability for a given n-gram
 	 */
 	@Test
-	public void testTwo() {
-		
-		assertEquals("TEST1: Create Model", 3, (int)LanguageModel.createModel(7).log2ConditionalEstimate("and i a"));
+	public void testTwo() throws IOException {
+		System.out.println(model.prob("and"));
+		assertEquals("TEST2: Assess Information", 7, (int)Integer.valueOf((int)(model.prob("and")*1000)));
 	}
 }

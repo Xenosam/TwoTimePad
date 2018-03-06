@@ -24,13 +24,17 @@ public class LanguageModel {
 			final File file = new File("C:/Users/Andrew/workspace/TwoTimeNLM/corpus/");
 			for(final File child : file.listFiles()) {
 				//Calls train method for each file
-				train(model, file.toString() + "/" + child.getName());
+				model = train( model, file.toString() + "/" + child.getName());
+				//analyzeModel(model);
 			}
+			System.out.println("Log2Estimate:" + (double)model.log2Estimate("alcohol"));
+			System.out.println("Prob:" + (double)model.prob("alcohol"));
 		} catch (IOException e) {
 			//IOException Handle
 			System.out.println(e.getMessage());
 			e.printStackTrace();
 		}
+		
 		
 	}
 	
@@ -49,7 +53,7 @@ public class LanguageModel {
 	 * NGramProcessLM model - The model that requires training
 	 * String file - The filename to train the model
 	 */
-	public static void train(NGramProcessLM model, String file) throws IOException {
+	public static NGramProcessLM train(NGramProcessLM model, String file) throws IOException {
 		File f = new File(file);
 		
 		//Attempts to create a Buffered Reader to parse file
@@ -58,12 +62,15 @@ public class LanguageModel {
 			//For each line of the file train the model and output to console
 			for(String line; (line = br.readLine()) != null;) {
 				model.train(line);
-				System.out.println(line);
+				//System.out.println(line);
 			}
+			br.close();
+			return model;
 		} catch(FileNotFoundException e) {
 			//FileNotFoundException Handler
 			System.out.println("ERROR: " + e.getMessage());
 		}
+		return null;
 	}
 	
 }
