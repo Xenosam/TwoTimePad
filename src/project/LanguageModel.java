@@ -1,10 +1,16 @@
 package project;
 
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileNotFoundException;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+
 import com.aliasi.lm.NGramProcessLM;
 
 /**
@@ -19,23 +25,15 @@ public class LanguageModel {
 	public static void main(String[] args) {
 		//Creates java lingpipe model form NGram Language Modelling
 		NGramProcessLM model = createModel(3);
-		try {
-			//Searches Directory for each file
-			final File file = new File("C:/Users/Andrew/workspace/TwoTimeNLM/corpus/");
-			for(final File child : file.listFiles()) {
-				//Calls train method for each file
-				model = train( model, file.toString() + "/" + child.getName());
-			}
-			likelyNGrams("an", model, 5);
-			//System.out.println("Log2Estimate:" + (double)model.log2Estimate("alcohol"));
-			//System.out.println("Prob:" + (double)model.prob("alcohol"));
-		} catch (IOException e) {
-			//IOException Handle
-			System.out.println(e.getMessage());
-			e.printStackTrace();
+		//Searches Directory for each file
+		final File file = new File("C:/Users/Andrew/workspace/TwoTimeNLM/resources/corpus/");
+		for(final File child : file.listFiles()) {
+			//Calls train method for each file
+			model = train( model, file.toString() + "/" + child.getName());
 		}
-		
-		
+		likelyNGrams("an", model, 5);
+		//System.out.println("Log2Estimate:" + (double)model.log2Estimate("alcohol"));
+		//System.out.println("Prob:" + (double)model.prob("alcohol"));
 	}
 	
 	/*
@@ -53,8 +51,8 @@ public class LanguageModel {
 	 * NGramProcessLM model - The model that requires training
 	 * String file - The filename to train the model
 	 */
-	public static NGramProcessLM train(NGramProcessLM model, String file) throws IOException {
-		File f = new File(file);
+	public static NGramProcessLM train(NGramProcessLM model, String filename) {
+		File f = new File(filename);
 		
 		//Attempts to create a Buffered Reader to parse file
 		try{
@@ -66,9 +64,9 @@ public class LanguageModel {
 			}
 			br.close();
 			return model;
-		} catch(FileNotFoundException e) {
-			//FileNotFoundException Handler
-			System.out.println("ERROR: " + e.getMessage());
+		} catch(IOException e) {
+			System.out.println(e.getMessage());
+			e.printStackTrace();
 		}
 		return null;
 	}
@@ -114,5 +112,53 @@ public class LanguageModel {
 	    }
 	    //Return Sorted NGram information
 		return output;
+	}
+	
+	/*
+	 * String filename - Name of File to save to
+	 * NGramProcessLM model - Model to save
+	 * TODO - Make path relative
+	 */
+	public static void saveToFile(String filename, NGramProcessLM model) {
+		//Create File
+		File f = new File("C:/Users/Andrew/workspace/TwoTimeNLM/resources/models/" + filename + ".txt");
+		OutputStream out;
+		try {
+			//Establish Output Stream
+			out = new FileOutputStream(f);
+			model.writeTo(out);
+			BufferedOutputStream bOutput = new BufferedOutputStream(out);
+			//Dump model to Output Stream
+			model.writeTo(bOutput);
+			//Close Stream
+			bOutput.close();
+		} catch (IOException e) {
+			System.out.println(e.getMessage());
+			e.printStackTrace();
+		}
+	}
+	
+	/*
+	 * String filename - Name of File to load from
+	 * TODO - Make path relative
+	 */
+	public static NGramProcessLM loadFromFile(String filename) {
+		NGramProcessLM model = null;
+		//Create File
+		File f = new File("C:/Users/Andrew/workspace/TwoTimeNLM/resources/models/" + filename + ".txt");
+		try {
+			//Establish Input Stream
+			InputStream input;
+			input = new FileInputStream(f);
+			BufferedInputStream bInput = new BufferedInputStream(input);
+			//Read model from Input Stream
+			model = NGramProcessLM.readFrom(bInput);
+			//Close Stream
+			bInput.close();
+		} catch (IOException e) {
+			System.out.println(e.getMessage());
+			e.printStackTrace();
+		}
+		return model;
 	}
 }

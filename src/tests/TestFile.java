@@ -18,7 +18,7 @@ public class TestFile {
 	
 	@Before
 	public void setUp() throws Exception {
-		model = LanguageModel.train(LanguageModel.createModel(3), "C:/Users/Andrew/workspace/TwoTimeNLM/corpus/A Tale of Two Cities - Charles Dickens.txt");
+		model = LanguageModel.train(LanguageModel.createModel(3), "C:/Users/Andrew/workspace/TwoTimeNLM/resources/corpus/A Tale of Two Cities - Charles Dickens.txt");
 	}
 	
 	/*
@@ -54,6 +54,16 @@ public class TestFile {
 	public void testFour() {
 		AnalysisPair aP = new AnalysisPair("and", 0.007442417374451658);
 		assertEquals("TEST4: Testing most likely NGrams", aP.toString(), LanguageModel.likelyNGrams("an", model, 1)[0].toString());
+	}
+	
+	/*
+	 * Test Save/Load functionality of the program
+	 */
+	@Test
+	public void testFive() {
+		LanguageModel.saveToFile("testfile", model);
+		NGramProcessLM model2 = LanguageModel.loadFromFile("testfile");
+		assertEquals("TEST5:",(int)(model2.prob("and")*1000),(int)(model.prob("and")*1000));
 	}
 	
 	/*
