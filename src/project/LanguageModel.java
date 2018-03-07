@@ -18,17 +18,17 @@ public class LanguageModel {
 	 */
 	public static void main(String[] args) {
 		//Creates java lingpipe model form NGram Language Modelling
-		NGramProcessLM model = createModel(7);
+		NGramProcessLM model = createModel(3);
 		try {
 			//Searches Directory for each file
 			final File file = new File("C:/Users/Andrew/workspace/TwoTimeNLM/corpus/");
 			for(final File child : file.listFiles()) {
 				//Calls train method for each file
 				model = train( model, file.toString() + "/" + child.getName());
-				//analyzeModel(model);
 			}
-			System.out.println("Log2Estimate:" + (double)model.log2Estimate("alcohol"));
-			System.out.println("Prob:" + (double)model.prob("alcohol"));
+			likelyNGrams("an", model, 5);
+			//System.out.println("Log2Estimate:" + (double)model.log2Estimate("alcohol"));
+			//System.out.println("Prob:" + (double)model.prob("alcohol"));
 		} catch (IOException e) {
 			//IOException Handle
 			System.out.println(e.getMessage());
@@ -76,16 +76,43 @@ public class LanguageModel {
 	/*
 	 * String input - The N - 1 Gram to assess
 	 * NGramProcessLM  model - The model for analysis
+	 * int topX - The amount of top results to return
 	 * 
 	 * Takes the N-1Gram has input and returns an array of the most likely n-grams
 	 * 
 	 * return - tuple (String,Percentage)
 	 */
-	public static AnalysisPair[] likelyNGrams(String input, NGramProcessLM model) {
-		if(input.length() - 1 != model.maxNGram()) {
-			System.out.println("Input string has the wrong amount of characters");
+	public static AnalysisPair[] likelyNGrams(String input, NGramProcessLM model, int topX) {
+		AnalysisPair[] aP = new AnalysisPair[94];
+		if(input.length() != model.maxNGram() - 1) {
+			System.out.println("Input string has the wrong amount of characters: Required - " + (model.maxNGram() - 1) + ", Entered - " + input.length());
 			return null;
 		}
-		return null;
+		//Read all possible results for NGram extension (n-1 to n) 
+		for(int i = 0; i<94; i++) {
+			String s = input + (char)(i + 32);
+			aP[i] = new AnalysisPair(s, model.prob(s));
+		}
+		//Sort in order of probability (Bubble Sort)
+	    AnalysisPair temp;
+	    for (int i = 0; i < 94; i++) {
+	        for (int j = 1; j < (94 - i); j++) {
+
+	            if (aP[j - 1].getProbability() < aP[j].getProbability()) {
+	                temp = aP[j - 1];
+	                aP[j - 1] = aP[j];
+	                aP[j] = temp;
+	            }
+
+	        }
+	    }
+	    //Print results
+	    AnalysisPair[] output = new AnalysisPair[topX];
+	    for(int i = 0; i < topX; i++) {
+	    	output[i] = new AnalysisPair(aP[i].getNgram(), aP[i].getProbability());
+			System.out.println("Rank " + (i+1) + ": " + aP[i].toString());
+	    }
+	    //Return Sorted NGram information
+		return output;
 	}
 }

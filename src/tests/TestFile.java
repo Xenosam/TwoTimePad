@@ -52,7 +52,8 @@ public class TestFile {
 	 */
 	@Test
 	public void testFour() {
-		assertEquals("TEST4:",0,null);
+		AnalysisPair aP = new AnalysisPair("and", 0.007442417374451658);
+		assertEquals("TEST4: Testing most likely NGrams", aP.toString(), LanguageModel.likelyNGrams("an", model, 1)[0].toString());
 	}
 	
 	/*
