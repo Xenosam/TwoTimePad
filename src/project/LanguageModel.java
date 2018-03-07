@@ -18,142 +18,175 @@ import com.aliasi.lm.NGramProcessLM;
  *
  */
 public class LanguageModel {
-	
-	/*
-	 * Handles the main processing loop of the program
+
+	/**
+	 * Main method for controlling execution flow
+	 * 
+	 * @param args
+	 *            command line arguements fed to the program
 	 */
 	public static void main(String[] args) {
-		//Creates java lingpipe model form NGram Language Modelling
+		// Creates java lingpipe model form NGram Language Modelling
 		NGramProcessLM model = createModel(3);
-		//Searches Directory for each file
+		// Searches Directory for each file
 		final File file = new File("C:/Users/Andrew/workspace/TwoTimeNLM/resources/corpus/");
-		for(final File child : file.listFiles()) {
-			//Calls train method for each file
-			model = train( model, file.toString() + "/" + child.getName());
+		for (final File child : file.listFiles()) {
+			// Calls train method for each file
+			model = train(model, file.toString() + "/" + child.getName());
 		}
 		likelyNGrams("an", model, 5);
-		//System.out.println("Log2Estimate:" + (double)model.log2Estimate("alcohol"));
-		//System.out.println("Prob:" + (double)model.prob("alcohol"));
+		// System.out.println("Log2Estimate:" +
+		// (double)model.log2Estimate("alcohol"));
+		// System.out.println("Prob:" + (double)model.prob("alcohol"));
 	}
-	
-	/*
-	 * int n - length of NGram
+
+	/**
+	 * Method for creation and initialization of new NGramProcessLM models
 	 * 
-	 * This method is for specifying any information during the creation of the model
-	 * May become unneccessary if the only use is the constructor
+	 * @param n
+	 *            The length of the n-grams created for the model
+	 * @return An initialized NGramProcessLM model
 	 */
 	public static NGramProcessLM createModel(int n) {
 		NGramProcessLM model = new NGramProcessLM(n);
 		return model;
 	}
-	
-	/*
-	 * NGramProcessLM model - The model that requires training
-	 * String file - The filename to train the model
+
+	/**
+	 * Method for training a given model by reading each line of the given file
+	 * and constructing probabilities for each possible ngram
+	 * 
+	 * @param model
+	 *            The model to be trained
+	 * @param filename
+	 *            The filename of the file to be read
+	 * @return A trained NGramProcessLM model
 	 */
 	public static NGramProcessLM train(NGramProcessLM model, String filename) {
 		File f = new File(filename);
-		
-		//Attempts to create a Buffered Reader to parse file
-		try{
+
+		// Attempts to create a Buffered Reader to parse file
+		try {
 			BufferedReader br = new BufferedReader(new FileReader(f));
-			//For each line of the file train the model and output to console
-			for(String line; (line = br.readLine()) != null;) {
+			// For each line of the file train the model and output to console
+			for (String line; (line = br.readLine()) != null;) {
 				model.train(line);
-				//System.out.println(line);
+				// System.out.println(line);
 			}
 			br.close();
 			return model;
-		} catch(IOException e) {
+		} catch (IOException e) {
 			System.out.println(e.getMessage());
 			e.printStackTrace();
 		}
 		return null;
 	}
-	
-	/*
-	 * String input - The N - 1 Gram to assess
-	 * NGramProcessLM  model - The model for analysis
-	 * int topX - The amount of top results to return
+
+	/**
+	 * Method for returning the topX most likely NGrams for a given N-1Gram for
+	 * a given model. Currently the model looks at letters between 32 and 126
+	 * for testing TODO Change model back to 256
 	 * 
-	 * Takes the N-1Gram has input and returns an array of the most likely n-grams
-	 * 
-	 * return - tuple (String,Percentage)
+	 * @param input
+	 *            The N-1Gram to be expanded
+	 * @param model
+	 *            The model for the expected probabilities
+	 * @param topX
+	 *            The amount of results to be returned
+	 * @return An array of pairs of length topX that contains a given string and
+	 *         its associated probability
 	 */
 	public static AnalysisPair[] likelyNGrams(String input, NGramProcessLM model, int topX) {
 		AnalysisPair[] aP = new AnalysisPair[94];
-		if(input.length() != model.maxNGram() - 1) {
-			System.out.println("Input string has the wrong amount of characters: Required - " + (model.maxNGram() - 1) + ", Entered - " + input.length());
+		if (input.length() != model.maxNGram() - 1) {
+			System.out.println("Input string has the wrong amount of characters: Required - " + (model.maxNGram() - 1)
+					+ ", Entered - " + input.length());
 			return null;
 		}
-		//Read all possible results for NGram extension (n-1 to n) 
-		for(int i = 0; i<94; i++) {
-			String s = input + (char)(i + 32);
+		// Read all possible results for NGram extension (n-1 to n)
+		for (int i = 0; i < 94; i++) {
+			String s = input + (char) (i + 32);
 			aP[i] = new AnalysisPair(s, model.prob(s));
 		}
-		//Sort in order of probability (Bubble Sort)
-	    AnalysisPair temp;
-	    for (int i = 0; i < 94; i++) {
-	        for (int j = 1; j < (94 - i); j++) {
+		// Sort in order of probability (Bubble Sort)
+		AnalysisPair temp;
+		for (int i = 0; i < 94; i++) {
+			for (int j = 1; j < (94 - i); j++) {
 
-	            if (aP[j - 1].getProbability() < aP[j].getProbability()) {
-	                temp = aP[j - 1];
-	                aP[j - 1] = aP[j];
-	                aP[j] = temp;
-	            }
+				if (aP[j - 1].getProbability() < aP[j].getProbability()) {
+					temp = aP[j - 1];
+					aP[j - 1] = aP[j];
+					aP[j] = temp;
+				}
 
-	        }
-	    }
-	    //Print results
-	    AnalysisPair[] output = new AnalysisPair[topX];
-	    for(int i = 0; i < topX; i++) {
-	    	output[i] = new AnalysisPair(aP[i].getNgram(), aP[i].getProbability());
-			System.out.println("Rank " + (i+1) + ": " + aP[i].toString());
-	    }
-	    //Return Sorted NGram information
+			}
+		}
+		// Print results
+		AnalysisPair[] output = new AnalysisPair[topX];
+		for (int i = 0; i < topX; i++) {
+			output[i] = new AnalysisPair(aP[i].getNgram(), aP[i].getProbability());
+			System.out.println("Rank " + (i + 1) + ": " + aP[i].toString());
+		}
+		// Return Sorted NGram information
 		return output;
 	}
-	
-	/*
-	 * String filename - Name of File to save to
-	 * NGramProcessLM model - Model to save
-	 * TODO - Make path relative
+
+	/**
+	 * TODO Write JavaDoc
+	 * @param model
+	 * @return
+	 */
+	public static NGramProcessLM smoothingLaplace(NGramProcessLM model) {
+		// TODO Complete Method
+		return null;
+	}
+
+	/**
+	 * This method is for saving an NGramProcessLM model to the disc
+	 * 
+	 * @param filename
+	 *            The name of the file to be created
+	 * @param model
+	 *            The model being exported
 	 */
 	public static void saveToFile(String filename, NGramProcessLM model) {
-		//Create File
+		// Create File
 		File f = new File("C:/Users/Andrew/workspace/TwoTimeNLM/resources/models/" + filename + ".txt");
 		OutputStream out;
 		try {
-			//Establish Output Stream
+			// Establish Output Stream
 			out = new FileOutputStream(f);
 			model.writeTo(out);
 			BufferedOutputStream bOutput = new BufferedOutputStream(out);
-			//Dump model to Output Stream
+			// Dump model to Output Stream
 			model.writeTo(bOutput);
-			//Close Stream
+			// Close Stream
 			bOutput.close();
 		} catch (IOException e) {
 			System.out.println(e.getMessage());
 			e.printStackTrace();
 		}
 	}
-	
-	/*
-	 * String filename - Name of File to load from
-	 * TODO - Make path relative
+
+	/**
+	 * Method for loading an NGramProcessLM model from the disc
+	 * 
+	 * @param filename
+	 *            The file to be loaded
+	 * @return The model containing the data from the loaded file
 	 */
 	public static NGramProcessLM loadFromFile(String filename) {
 		NGramProcessLM model = null;
-		//Create File
+		// Create File
 		File f = new File("C:/Users/Andrew/workspace/TwoTimeNLM/resources/models/" + filename + ".txt");
 		try {
-			//Establish Input Stream
+			// Establish Input Stream
 			InputStream input;
 			input = new FileInputStream(f);
 			BufferedInputStream bInput = new BufferedInputStream(input);
-			//Read model from Input Stream
+			// Read model from Input Stream
 			model = NGramProcessLM.readFrom(bInput);
-			//Close Stream
+			// Close Stream
 			bInput.close();
 		} catch (IOException e) {
 			System.out.println(e.getMessage());
