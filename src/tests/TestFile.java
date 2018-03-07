@@ -9,6 +9,7 @@ import org.junit.Test;
 
 import com.aliasi.lm.NGramProcessLM;
 
+import project.AnalysisPair;
 import project.LanguageModel;
 
 public class TestFile {
@@ -34,7 +35,31 @@ public class TestFile {
 	 */
 	@Test
 	public void testTwo() throws IOException {
-		System.out.println(model.prob("and"));
-		assertEquals("TEST2: Assess Information", 7, (int)Integer.valueOf((int)(model.prob("and")*1000)));
+		assertEquals("TEST2: Access Model", 7, (int)Integer.valueOf((int)(model.prob("and")*1000)));
+	}
+	
+	/*
+	 * 
+	 */
+	@Test
+	public void testThree() {
+		AnalysisPair aP = new AnalysisPair("and", 0.007321452);
+		assertEquals("TEST3: Analysis Pair", "and, 0.007321452", aP.toString());
+	}
+	
+	/*
+	 * Grab the most likely N-Grams given an N-1Gram
+	 */
+	@Test
+	public void testFour() {
+		assertEquals("TEST4:",0,null);
+	}
+	
+	/*
+	 * 
+	 */
+	@Test
+	public void test() {
+		assertEquals("TEST:",0,0);
 	}
 }

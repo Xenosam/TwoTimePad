@@ -73,4 +73,19 @@ public class LanguageModel {
 		return null;
 	}
 	
+	/*
+	 * String input - The N - 1 Gram to assess
+	 * NGramProcessLM  model - The model for analysis
+	 * 
+	 * Takes the N-1Gram has input and returns an array of the most likely n-grams
+	 * 
+	 * return - tuple (String,Percentage)
+	 */
+	public static AnalysisPair[] likelyNGrams(String input, NGramProcessLM model) {
+		if(input.length() - 1 != model.maxNGram()) {
+			System.out.println("Input string has the wrong amount of characters");
+			return null;
+		}
+		return null;
+	}
 }
