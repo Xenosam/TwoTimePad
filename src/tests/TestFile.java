@@ -15,12 +15,20 @@ import project.LanguageModel;
 public class TestFile {
 
 	NGramProcessLM model, laplace;
+<<<<<<< HEAD
 
 	/**
 	 * Setup method for initialising test variables
 	 * 
 	 * @throws Exception
 	 *             Runtime Exception
+=======
+	
+	/**
+	 * Setup method for initialising test variables
+	 * 
+	 * @throws Exception Runtime Exception
+>>>>>>> master
 	 */
 	@Before
 	public void setUp() throws Exception {
@@ -36,6 +44,7 @@ public class TestFile {
 	public void testOne() {
 		// assertEquals("String", $ExpectedOutcome, methodForTest());
 		assertEquals("TEST1: Create Model", 3, model.maxNGram());
+<<<<<<< HEAD
 	}
 
 	/**
@@ -94,15 +103,61 @@ public class TestFile {
 
 		assertEquals("TEST6: AnalysisPair model", (int) (model.prob("and") * 1000),
 				(int) (aP[correctindex].getProbability() * 1000));
+=======
+	}
+
+	/**
+	 * Recieves useful information from model and grabs the probability for a
+	 * given n-gram
+	 */
+	@Test
+	public void testTwo() throws IOException {
+		assertEquals("TEST2: Access Model", 7, (int) Integer.valueOf((int) (model.prob("and") * 1000)));
+	}
+
+	/**
+	 * 
+	 */
+	@Test
+	public void testThree() {
+		AnalysisPair aP = new AnalysisPair("and", 0.007321452);
+		assertEquals("TEST3: Analysis Pair", "and, 0.007321452", aP.toString());
+	}
+
+	/**
+	 * Grab the most likely N-Grams given an N-1Gram
+	 */
+	@Test
+	public void testFour() {
+		AnalysisPair aP = new AnalysisPair("and", 0.007442417374451658);
+		assertEquals("TEST4: Testing most likely NGrams", aP.toString(),
+				LanguageModel.likelyNGrams("an", model, 1)[0].toString());
+	}
+
+	/**
+	 * Test Save/Load functionality of the program
+	 */
+	@Test
+	public void testFive() {
+		LanguageModel.saveToFile("testfile", model);
+		NGramProcessLM model2 = LanguageModel.loadFromFile("testfile");
+		assertEquals("TEST5: Saving/Loading Model to/from File", (int) (model2.prob("and") * 1000),
+				(int) (model.prob("and") * 1000));
+>>>>>>> master
 	}
 
 	/**
 	 * Language Smoothing Test (Laplace)
 	 */
 	@Test
+<<<<<<< HEAD
 	public void testSeven() {
 		assertEquals("TEST7: Laplace Smoothing", (int) (0 * 1000),
 				(int) LanguageModel.smoothingLaplace(model).prob("and") * 1000);
+=======
+	public void testSix() {
+		assertEquals("TEST6: Laplace Smoothing", (int) (0 * 1000), (int) (laplace.prob("and") * 1000));
+>>>>>>> master
 	}
 
 	/**
