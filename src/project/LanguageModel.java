@@ -53,6 +53,26 @@ public class LanguageModel {
 	}
 
 	/**
+	 * TODO JavaDoc
+	 * 
+	 * @param model
+	 * @param n
+	 * @return
+	 */
+	public static AnalysisPair[] createAPModel(NGramProcessLM model, int n) {
+		AnalysisPair[] aP = new AnalysisPair[(int) Math.pow(256, n)];
+		String cSeq;
+		for (int i = 0; i < n; i++) {
+			for (int j = 0; j < 256; j++) {
+				// TODO Have a convert between index and cSeq
+				cSeq = "";
+				aP[0] = new AnalysisPair(cSeq, model.prob(cSeq));
+			}
+		}
+		return aP;
+	}
+
+	/**
 	 * Method for training a given model by reading each line of the given file
 	 * and constructing probabilities for each possible ngram
 	 * 
@@ -85,7 +105,7 @@ public class LanguageModel {
 	/**
 	 * Method for returning the topX most likely NGrams for a given N-1Gram for
 	 * a given model. Currently the model looks at letters between 32 and 126
-	 * for testing TODO Change model back to 256
+	 * for testing
 	 * 
 	 * @param input
 	 *            The N-1Gram to be expanded
@@ -97,21 +117,21 @@ public class LanguageModel {
 	 *         its associated probability
 	 */
 	public static AnalysisPair[] likelyNGrams(String input, NGramProcessLM model, int topX) {
-		AnalysisPair[] aP = new AnalysisPair[94];
+		AnalysisPair[] aP = new AnalysisPair[256];
 		if (input.length() != model.maxNGram() - 1) {
 			System.out.println("Input string has the wrong amount of characters: Required - " + (model.maxNGram() - 1)
 					+ ", Entered - " + input.length());
 			return null;
 		}
 		// Read all possible results for NGram extension (n-1 to n)
-		for (int i = 0; i < 94; i++) {
-			String s = input + (char) (i + 32);
+		for (int i = 0; i < 256; i++) {
+			String s = input + (char) (i);
 			aP[i] = new AnalysisPair(s, model.prob(s));
 		}
 		// Sort in order of probability (Bubble Sort)
 		AnalysisPair temp;
-		for (int i = 0; i < 94; i++) {
-			for (int j = 1; j < (94 - i); j++) {
+		for (int i = 0; i < 256; i++) {
+			for (int j = 1; j < (256 - i); j++) {
 
 				if (aP[j - 1].getProbability() < aP[j].getProbability()) {
 					temp = aP[j - 1];
@@ -132,9 +152,13 @@ public class LanguageModel {
 	}
 
 	/**
-	 * TODO Write JavaDoc
-	 * @param model
-	 * @return
+	 * Adds a single appearance to every item in the model
+	 * 
+	 * @param prob
+	 *            The double to be smoothed
+	 * @param count
+	 *            The total amount of results from the model
+	 * @return The smoothed double
 	 */
 	public static NGramProcessLM smoothingLaplace(NGramProcessLM model) {
 		// TODO Complete Method

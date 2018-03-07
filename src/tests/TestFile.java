@@ -15,11 +15,12 @@ import project.LanguageModel;
 public class TestFile {
 
 	NGramProcessLM model, laplace;
-	
+
 	/**
 	 * Setup method for initialising test variables
 	 * 
-	 * @throws Exception Runtime Exception
+	 * @throws Exception
+	 *             Runtime Exception
 	 */
 	@Before
 	public void setUp() throws Exception {
@@ -77,11 +78,31 @@ public class TestFile {
 	}
 
 	/**
-	 * Language Smoothing Test (Laplace)
+	 * Creating a seperate model using the AnalysisPair class for more helpful
+	 * analysis
 	 */
 	@Test
 	public void testSix() {
-		assertEquals("TEST6: Laplace Smoothing", (int) (0 * 1000), (int) (laplace.prob("and") * 1000));
+		AnalysisPair[] aP = LanguageModel.createAPModel(model, 3);
+		int correctindex = 0;
+		for (int i = 0; i < aP.length; i++) {
+			if (aP[i].getNgram().equals("and")) {
+				correctindex = i;
+				break;
+			}
+		}
+
+		assertEquals("TEST6: AnalysisPair model", (int) (model.prob("and") * 1000),
+				(int) (aP[correctindex].getProbability() * 1000));
+	}
+
+	/**
+	 * Language Smoothing Test (Laplace)
+	 */
+	@Test
+	public void testSeven() {
+		assertEquals("TEST7: Laplace Smoothing", (int) (0 * 1000),
+				(int) LanguageModel.smoothingLaplace(model).prob("and") * 1000);
 	}
 
 	/**
