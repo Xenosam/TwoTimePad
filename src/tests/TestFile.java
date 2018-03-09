@@ -84,16 +84,8 @@ public class TestFile {
 	@Test
 	public void testSix() {
 		AnalysisPair[] aP = LanguageModel.createAPModel(model, 3);
-		int correctindex = 0;
-		for (int i = 0; i < aP.length; i++) {
-			if (aP[i].getNgram().equals("and")) {
-				correctindex = i;
-				break;
-			}
-		}
-
 		assertEquals("TEST6: AnalysisPair model", (int) (model.prob("and") * 1000),
-				(int) (aP[correctindex].getProbability() * 1000));
+				(int) (aP[6435122].getProbability() * 1000));
 	}
 
 	/**

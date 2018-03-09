@@ -26,14 +26,19 @@ public class LanguageModel {
 	 *            command line arguements fed to the program
 	 */
 	public static void main(String[] args) {
+		//TODO Change n declaration to command line arguement
+		int n = 3;
 		// Creates java lingpipe model form NGram Language Modelling
-		NGramProcessLM model = createModel(3);
+		NGramProcessLM model = createModel(n);
 		// Searches Directory for each file
 		final File file = new File("C:/Users/Andrew/workspace/TwoTimeNLM/resources/corpus/");
 		for (final File child : file.listFiles()) {
 			// Calls train method for each file
+			System.out.println(child.getName());
 			model = train(model, file.toString() + "/" + child.getName());
 		}
+		createAPModel(model, n);
+		
 		likelyNGrams("an", model, 5);
 		// System.out.println("Log2Estimate:" +
 		// (double)model.log2Estimate("alcohol"));
@@ -53,21 +58,37 @@ public class LanguageModel {
 	}
 
 	/**
-	 * TODO JavaDoc
+	 * Creates a model using the AnalysisPair class based off of a preexistant
+	 * NGramProcessLM model
 	 * 
 	 * @param model
+	 *            The NGramProcessLM model to take the information from
 	 * @param n
-	 * @return
+	 *            The length of the NGram
+	 * @return An array of String,Double pairs that represents each ngram and
+	 *         its percentage chance of appearance
 	 */
 	public static AnalysisPair[] createAPModel(NGramProcessLM model, int n) {
-		AnalysisPair[] aP = new AnalysisPair[(int) Math.pow(256, n)];
-		String cSeq;
+		//TODO Change from XYZ to ZYX
+		char[] cSeq = new char[n];
+		int temp;
+		String tempS;
 		for (int i = 0; i < n; i++) {
-			for (int j = 0; j < 256; j++) {
-				// TODO Have a convert between index and cSeq
-				cSeq = "";
-				aP[0] = new AnalysisPair(cSeq, model.prob(cSeq));
+			cSeq[i] = Character.valueOf((char) 0);
+		}
+		AnalysisPair[] aP = new AnalysisPair[(int) Math.pow(256, n)];
+		int j = n - 1;
+		for (int i = 0; i < aP.length; i++) {
+			while (Integer.valueOf((int) cSeq[j]) == 256) {
+				cSeq[j] = Character.valueOf((char) 0);
+				j--;
 			}
+			temp = Integer.valueOf((int) cSeq[j]);
+			cSeq[j] = Character.valueOf((char) (temp + 1));
+			tempS = String.valueOf(cSeq);
+			aP[i] = new AnalysisPair(tempS, model.prob(tempS));
+			j = n - 1;
+
 		}
 		return aP;
 	}
@@ -132,7 +153,7 @@ public class LanguageModel {
 		AnalysisPair temp;
 		for (int i = 0; i < 256; i++) {
 			for (int j = 1; j < (256 - i); j++) {
-
+				
 				if (aP[j - 1].getProbability() < aP[j].getProbability()) {
 					temp = aP[j - 1];
 					aP[j - 1] = aP[j];
@@ -145,7 +166,7 @@ public class LanguageModel {
 		AnalysisPair[] output = new AnalysisPair[topX];
 		for (int i = 0; i < topX; i++) {
 			output[i] = new AnalysisPair(aP[i].getNgram(), aP[i].getProbability());
-			System.out.println("Rank " + (i + 1) + ": " + aP[i].toString());
+			//OUTPUT: System.out.println("Rank " + (i + 1) + ": " + aP[i].toString());
 		}
 		// Return Sorted NGram information
 		return output;
