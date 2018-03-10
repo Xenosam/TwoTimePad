@@ -14,7 +14,7 @@ import project.LanguageModel;
 
 public class TestFile {
 
-	NGramProcessLM model, laplace;
+	NGramProcessLM model, model4, laplace;
 
 	/**
 	 * Setup method for initialising test variables
@@ -25,6 +25,8 @@ public class TestFile {
 	@Before
 	public void setUp() throws Exception {
 		model = LanguageModel.train(LanguageModel.createModel(3),
+				"C:/Users/Andrew/workspace/TwoTimeNLM/resources/corpus/A Tale of Two Cities - Charles Dickens.txt");
+		model4 = LanguageModel.train(LanguageModel.createModel(4),
 				"C:/Users/Andrew/workspace/TwoTimeNLM/resources/corpus/A Tale of Two Cities - Charles Dickens.txt");
 		laplace = LanguageModel.smoothingLaplace(model);
 	}
@@ -87,13 +89,28 @@ public class TestFile {
 		assertEquals("TEST6: AnalysisPair model", (int) (model.prob("and") * 1000),
 				(int) (aP[6435122].getProbability() * 1000));
 	}
-
+	
+	@Test
+	public void testSeven() {
+		AnalysisPair[] aP = LanguageModel.createAPModel(model, 4);
+		int correctindex = 0;
+		for (int i = 0; i < aP.length; i++) {
+			if (aP[i].getNgram().equals("and")) {
+				correctindex = i;
+				break;
+			}
+		}
+		System.out.println(correctindex);
+		assertEquals("TEST7: AnalysisPair model for 4grams", (int) (model.prob("and ") * 1000),
+				(int) (aP[correctindex].getProbability() * 1000));
+	}
+	
 	/**
 	 * Language Smoothing Test (Laplace)
 	 */
 	@Test
-	public void testSeven() {
-		assertEquals("TEST7: Laplace Smoothing", (int) (0 * 1000),
+	public void testEight() {
+		assertEquals("TEST8: Laplace Smoothing", (int) (0 * 1000),
 				(int) LanguageModel.smoothingLaplace(model).prob("and") * 1000);
 	}
 
