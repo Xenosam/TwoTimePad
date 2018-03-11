@@ -26,23 +26,51 @@ public class LanguageModel {
 	 *            command line arguements fed to the program
 	 */
 	public static void main(String[] args) {
-		//TODO Change n declaration to command line arguement
+		// TODO Change n declaration to command line arguement
 		int n = 3;
+		if (n < 3) {
+			if (n == 0) {
+				// TODO Properly implement load from file
+				loadFromFile(args[2]);
+			}
+			// TODO implement failsafe for impossible n
+		}
+
 		// Creates java lingpipe model form NGram Language Modelling
 		NGramProcessLM model = createModel(n);
+		NGramProcessLM model2 = createModel(n - 1);
+		NGramProcessLM smoothing;
+		NGramProcessLM smoothing2;
+
 		// Searches Directory for each file
 		final File file = new File("C:/Users/Andrew/workspace/TwoTimeNLM/resources/corpus/");
 		for (final File child : file.listFiles()) {
 			// Calls train method for each file
 			System.out.println(child.getName());
 			model = train(model, file.toString() + "/" + child.getName());
+			model2 = train(model2, file.toString() + "/" + child.getName());
 		}
-		createAPModel(model, n);
+
+		// Initialize models for smoothing
+		smoothing = model;
+		smoothing2 = model2;
+
+		// Laplace smoothing
+		smoothing = smoothingLaplace(smoothing, n);
+		smoothing = smoothingLaplace(smoothing2, (n - 1));
+
+		// TODO XOR Handler
+		// TODO Beam Search
+		// TODO Results Display
 		
-		likelyNGrams("an", model, 5);
-		// System.out.println("Log2Estimate:" +
-		// (double)model.log2Estimate("alcohol"));
-		// System.out.println("Prob:" + (double)model.prob("alcohol"));
+		if(args[3].toString() == "save") {
+			// TODO Properly implement save
+			saveToFile("3gramModel", model);
+			saveToFile("2gramModel", model2);
+			saveToFile("3gramLaplace", smoothing);
+			saveToFile("2gramLaplace", smoothing2);
+		}
+		
 	}
 
 	/**
@@ -69,24 +97,33 @@ public class LanguageModel {
 	 *         its percentage chance of appearance
 	 */
 	public static AnalysisPair[] createAPModel(NGramProcessLM model, int n) {
-		//TODO Change from XYZ to ZYX
+		// Will require a lot of memory when n > 4
+		if (n > 3) {
+			System.out.println("This may require allocating more memory");
+		}
 		char[] cSeq = new char[n];
 		int temp;
 		String tempS;
+		// Fill string with ASCII(0) characters
 		for (int i = 0; i < n; i++) {
 			cSeq[i] = Character.valueOf((char) 0);
 		}
+		// Create neccessary amount of space
 		AnalysisPair[] aP = new AnalysisPair[(int) Math.pow(256, n)];
 		int j = n - 1;
 		for (int i = 0; i < aP.length; i++) {
+			// Moves onto the next significant character if it's 256
 			while (Integer.valueOf((int) cSeq[j]) == 256) {
 				cSeq[j] = Character.valueOf((char) 0);
 				j--;
 			}
+			// Steps the character
 			temp = Integer.valueOf((int) cSeq[j]);
 			cSeq[j] = Character.valueOf((char) (temp + 1));
 			tempS = String.valueOf(cSeq);
+			// Adds result to array and checks probability
 			aP[i] = new AnalysisPair(tempS, model.prob(tempS));
+			// Moves back to least significant character
 			j = n - 1;
 
 		}
@@ -153,7 +190,7 @@ public class LanguageModel {
 		AnalysisPair temp;
 		for (int i = 0; i < 256; i++) {
 			for (int j = 1; j < (256 - i); j++) {
-				
+
 				if (aP[j - 1].getProbability() < aP[j].getProbability()) {
 					temp = aP[j - 1];
 					aP[j - 1] = aP[j];
@@ -166,7 +203,8 @@ public class LanguageModel {
 		AnalysisPair[] output = new AnalysisPair[topX];
 		for (int i = 0; i < topX; i++) {
 			output[i] = new AnalysisPair(aP[i].getNgram(), aP[i].getProbability());
-			//OUTPUT: System.out.println("Rank " + (i + 1) + ": " + aP[i].toString());
+			// OUTPUT: System.out.println("Rank " + (i + 1) + ": " +
+			// aP[i].toString());
 		}
 		// Return Sorted NGram information
 		return output;
@@ -181,9 +219,48 @@ public class LanguageModel {
 	 *            The total amount of results from the model
 	 * @return The smoothed double
 	 */
-	public static NGramProcessLM smoothingLaplace(NGramProcessLM model) {
-		// TODO Complete Method
-		return null;
+	public static NGramProcessLM smoothingLaplace(NGramProcessLM model, int n) {
+		// Follows the same process as the AP model production
+		char[] cSeq = new char[n];
+		int temp;
+		String tempS;
+		// Fill string with ASCII(0) characters
+		for (int i = 0; i < n; i++) {
+			cSeq[i] = Character.valueOf((char) 0);
+		}
+		int j = n - 1;
+		for (int i = 0; i < Math.pow(256, n); i++) {
+			// Moves onto the next significant character if it's 256
+			while (Integer.valueOf((int) cSeq[j]) == 256) {
+				cSeq[j] = Character.valueOf((char) 0);
+				j--;
+			}
+			// Steps the character
+			temp = Integer.valueOf((int) cSeq[j]);
+			cSeq[j] = Character.valueOf((char) (temp + 1));
+			tempS = String.valueOf(cSeq);
+			// Trains for an extra result
+			model.train(tempS);
+			// Moves back to least significant character
+			j = n - 1;
+		}
+		// Returns the smoothed model
+		return model;
+	}
+
+	/**
+	 * 
+	 * @param message
+	 * @param model
+	 * @param L
+	 * @return
+	 */
+	public static String solver(File message, NGramProcessLM model, int L) {
+		/*
+		 * String[] maxArray = new String[256]; String[] lArray = new String[L];
+		 */
+		// Random walk through to
+		return "";
 	}
 
 	/**

@@ -2,6 +2,7 @@ package tests;
 
 import static org.junit.Assert.*;
 
+import java.io.File;
 import java.io.IOException;
 
 import org.junit.Before;
@@ -28,7 +29,6 @@ public class TestFile {
 				"C:/Users/Andrew/workspace/TwoTimeNLM/resources/corpus/A Tale of Two Cities - Charles Dickens.txt");
 		model4 = LanguageModel.train(LanguageModel.createModel(4),
 				"C:/Users/Andrew/workspace/TwoTimeNLM/resources/corpus/A Tale of Two Cities - Charles Dickens.txt");
-		laplace = LanguageModel.smoothingLaplace(model);
 	}
 
 	/**
@@ -83,14 +83,18 @@ public class TestFile {
 	 * Creating a seperate model using the AnalysisPair class for more helpful
 	 * analysis
 	 */
-	@Test
+	// @Test
 	public void testSix() {
 		AnalysisPair[] aP = LanguageModel.createAPModel(model, 3);
 		assertEquals("TEST6: AnalysisPair model", (int) (model.prob("and") * 1000),
 				(int) (aP[6435122].getProbability() * 1000));
 	}
-	
-	@Test
+
+	/**
+	 * Same as testSix() but for models where ngrams are length 4 this test may
+	 * fail when a small amount of memory is alloted to JVM
+	 */
+	// @Test
 	public void testSeven() {
 		AnalysisPair[] aP = LanguageModel.createAPModel(model, 4);
 		int correctindex = 0;
@@ -104,21 +108,31 @@ public class TestFile {
 		assertEquals("TEST7: AnalysisPair model for 4grams", (int) (model.prob("and ") * 1000),
 				(int) (aP[correctindex].getProbability() * 1000));
 	}
-	
+
 	/**
 	 * Language Smoothing Test (Laplace)
+	 * 
 	 */
 	@Test
 	public void testEight() {
-		assertEquals("TEST8: Laplace Smoothing", (int) (0 * 1000),
-				(int) LanguageModel.smoothingLaplace(model).prob("and") * 1000);
+		NGramProcessLM lm = LanguageModel.createModel(3);
+		laplace = LanguageModel.smoothingLaplace(model, model.maxNGram());
+
+		assertEquals("TEST8: Laplace Smoothing", true, laplace.prob("g,!") > lm.prob("g,!"));
 	}
 
 	/**
-	 * 
+	 * Handle splitting an XOR input
 	 */
+	@Test
+	public void testNine() {
+		assertEquals("TEST9: XOR Handler", 0, LanguageModel.solver(new File("testNine"), model, 5));
+	}
+	
+	/*
 	@Test
 	public void test() {
 		assertEquals("TEST:", 0, 0);
 	}
+	*/
 }
