@@ -83,7 +83,7 @@ public class TestFile {
 	 * Creating a seperate model using the AnalysisPair class for more helpful
 	 * analysis
 	 */
-	// @Test
+	@Test
 	public void testSix() {
 		AnalysisPair[] aP = LanguageModel.createAPModel(model, 3);
 		assertEquals("TEST6: AnalysisPair model", (int) (model.prob("and") * 1000),
@@ -94,7 +94,7 @@ public class TestFile {
 	 * Same as testSix() but for models where ngrams are length 4 this test may
 	 * fail when a small amount of memory is alloted to JVM
 	 */
-	// @Test
+	@Test
 	public void testSeven() {
 		AnalysisPair[] aP = LanguageModel.createAPModel(model, 4);
 		int correctindex = 0;
@@ -126,7 +126,7 @@ public class TestFile {
 	 */
 	@Test
 	public void testNine() {
-		assertEquals("TEST9: XOR Handler", 0, LanguageModel.solver(new File("testNine"), model, 5));
+		assertEquals("TEST9: XOR Handler", '_', LanguageModel.XORHandler('u')[42]);
 	}
 	
 	/*

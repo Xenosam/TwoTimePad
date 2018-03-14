@@ -60,17 +60,40 @@ public class LanguageModel {
 		smoothing = smoothingLaplace(smoothing2, (n - 1));
 
 		// TODO XOR Handler
+
 		// TODO Beam Search
 		// TODO Results Display
-		
-		if(args[3].toString() == "save") {
+
+		if (args[3].toString() == "save") {
 			// TODO Properly implement save
 			saveToFile("3gramModel", model);
 			saveToFile("2gramModel", model2);
 			saveToFile("3gramLaplace", smoothing);
 			saveToFile("2gramLaplace", smoothing2);
 		}
-		
+
+	}
+
+	/**
+	 * Returns a character array with every possible combination of characters
+	 * the XOR to the character given as the input
+	 * 
+	 * @param input
+	 *            the XOR character to be split
+	 * @return a character array of each possible character combination
+	 */
+	public static char[] XORHandler(char input) {
+		// char[x][0] = ptA, char[x][1] = ptB
+		char[] output = new char[256];
+		char ptB;
+		// attempt all 256 possible for output = i ^ ptB
+		for (int i = 0; i < 256; i++) {
+			// c = a ^ b, a = c ^ b, b = c ^ a
+			ptB = (char) (input ^ i);
+			// ptA = i
+			output[i] = ptB;
+		}
+		return output;
 	}
 
 	/**
