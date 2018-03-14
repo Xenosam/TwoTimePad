@@ -5,6 +5,7 @@ import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
@@ -59,11 +60,6 @@ public class LanguageModel {
 		smoothing = smoothingLaplace(smoothing, n);
 		smoothing = smoothingLaplace(smoothing2, (n - 1));
 
-		// TODO XOR Handler
-
-		// TODO Beam Search
-		// TODO Results Display
-
 		if (args[3].toString() == "save") {
 			// TODO Properly implement save
 			saveToFile("3gramModel", model);
@@ -72,6 +68,78 @@ public class LanguageModel {
 			saveToFile("2gramLaplace", smoothing2);
 		}
 
+	}
+
+	/**
+	 * TODO JavaDoc
+	 * 
+	 * @param message
+	 * @param model
+	 * @param L
+	 * @return
+	 */
+	public static File solver(File message, NGramProcessLM model, int L) {
+		// Create strings for each plaintext
+		char[] strA = new char[model.maxNGram()];
+		char[] strB = new char[model.maxNGram()];
+		// Create file reader for the given input and step through each line
+		int currentChar;
+		char c;
+		char[] cXOR;
+		double[] score = new double[256];
+		AnalysisPair[] aPA = new AnalysisPair[256];
+		AnalysisPair[] aPB = new AnalysisPair[256];
+		// Try / Catch IOException
+		try {
+			BufferedReader br = new BufferedReader(new FileReader(message));
+			while ((currentChar = br.read()) != -1) {
+				// TODO Implement Process
+				// Blind walk from 0 - n
+				if (strA[model.maxNGram() - 1] == 0) {
+					if (strA[model.maxNGram() - 2] != 0) {
+						// END OF BLIND
+					} else {
+						// BLIND WALK
+						continue;
+					}
+				} else {
+					// If string is full then trim
+					for (int i = model.maxNGram() - 2; i >= 0; i--) {
+						// Remove least significant character
+						strA[i + 1] = strA[i];
+						strB[i + 1] = strB[i];
+					}
+				}
+				// update c
+				c = (char) currentChar;
+				// create XOR map
+				cXOR = XORHandler(c);
+				// Add each to a running string
+				for (int i = 0; i < 256; i++) {
+					// Add relevant letter to string
+					strA[model.maxNGram() - 1] = (char) i;
+					strB[model.maxNGram() - 1] = cXOR[i];
+					// Add statistics to model
+					AnalysisPair temp;
+					temp = new AnalysisPair(strA.toString(), model.prob(strA.toString()));
+					aPA[i] = temp;
+					temp = new AnalysisPair(strB.toString(), model.prob(strB.toString()));
+					aPB[i] = temp;
+					// Score Strings
+					score[i] = model.prob(strA.toString()) + model.prob(strB.toString());
+				}
+				// Filter top L results
+			}
+			br.close();
+		} catch (IOException e) {
+			// Handler for IOException
+			System.out.println(e.getMessage());
+			e.printStackTrace();
+		}
+		// Store plaintexts to file
+		// TODO decide output format
+		File output = new File("");
+		return output;
 	}
 
 	/**
@@ -269,21 +337,6 @@ public class LanguageModel {
 		}
 		// Returns the smoothed model
 		return model;
-	}
-
-	/**
-	 * 
-	 * @param message
-	 * @param model
-	 * @param L
-	 * @return
-	 */
-	public static String solver(File message, NGramProcessLM model, int L) {
-		/*
-		 * String[] maxArray = new String[256]; String[] lArray = new String[L];
-		 */
-		// Random walk through to
-		return "";
 	}
 
 	/**

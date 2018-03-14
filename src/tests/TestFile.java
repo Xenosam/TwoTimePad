@@ -2,7 +2,6 @@ package tests;
 
 import static org.junit.Assert.*;
 
-import java.io.File;
 import java.io.IOException;
 
 import org.junit.Before;
@@ -128,11 +127,16 @@ public class TestFile {
 	public void testNine() {
 		assertEquals("TEST9: XOR Handler", '_', LanguageModel.XORHandler('u')[42]);
 	}
-	
-	/*
+
+	/**
+	 * 
+	 */
 	@Test
-	public void test() {
-		assertEquals("TEST:", 0, 0);
+	public void testTen() {
+		assertEquals("TEST10:", 0, 0);
 	}
-	*/
+
+	/*
+	 * @Test public void test() { assertEquals("TEST:", 0, 0); }
+	 */
 }
