@@ -82,7 +82,7 @@ public class TestFile {
 	 * Creating a seperate model using the AnalysisPair class for more helpful
 	 * analysis
 	 */
-	@Test
+	//@Test
 	public void testSix() {
 		AnalysisPair[] aP = LanguageModel.createAPModel(model, 3);
 		assertEquals("TEST6: AnalysisPair model", (int) (model.prob("and") * 1000),
@@ -93,7 +93,7 @@ public class TestFile {
 	 * Same as testSix() but for models where ngrams are length 4 this test may
 	 * fail when a small amount of memory is alloted to JVM
 	 */
-	@Test
+	//@Test
 	public void testSeven() {
 		AnalysisPair[] aP = LanguageModel.createAPModel(model, 4);
 		int correctindex = 0;
@@ -112,7 +112,7 @@ public class TestFile {
 	 * Language Smoothing Test (Laplace)
 	 * 
 	 */
-	@Test
+	//@Test
 	public void testEight() {
 		NGramProcessLM lm = LanguageModel.createModel(3);
 		laplace = LanguageModel.smoothingLaplace(model, model.maxNGram());
@@ -129,11 +129,15 @@ public class TestFile {
 	}
 
 	/**
-	 * 
+	 * Testing the QuickSort Method for score sorting
 	 */
 	@Test
 	public void testTen() {
-		assertEquals("TEST10:", 0, 0);
+		double[] testArr = { 0.6, 0.3, 0.7, 0.1, 0.5, 0.4 };
+		double[] output = LanguageModel.quickSort(0, testArr.length - 1, testArr);
+		for(double d : output) 
+			System.out.println(d);
+		assertEquals("TEST10: QuickSort", true, output[5] > output[0]);
 	}
 
 	/*

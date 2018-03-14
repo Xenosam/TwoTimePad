@@ -5,7 +5,6 @@ import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
@@ -71,14 +70,18 @@ public class LanguageModel {
 	}
 
 	/**
-	 * TODO JavaDoc
+	 * Takes a given file that represents the XOR of two plaintexts and uses a
+	 * language model to produce a walk through the hidden markov model and
+	 * solve for the original plaintexts
 	 * 
 	 * @param message
+	 *            the input file to be decrypted
 	 * @param model
+	 *            the language model being used
 	 * @param L
-	 * @return
+	 *            the amount of potential paths to remember
 	 */
-	public static File solver(File message, NGramProcessLM model, int L) {
+	public static void solver(File message, NGramProcessLM model, int L) {
 		// Create strings for each plaintext
 		char[] strA = new char[model.maxNGram()];
 		char[] strB = new char[model.maxNGram()];
@@ -125,9 +128,12 @@ public class LanguageModel {
 					aPA[i] = temp;
 					temp = new AnalysisPair(strB.toString(), model.prob(strB.toString()));
 					aPB[i] = temp;
-					// Score Strings
+					// Score Strings: score[i] -> aPA[i] + aPB[i]
 					score[i] = model.prob(strA.toString()) + model.prob(strB.toString());
+
 				}
+				// Sort Score
+				score = quickSort(0, score.length - 1, score);
 				// Filter top L results
 			}
 			br.close();
@@ -138,7 +144,61 @@ public class LanguageModel {
 		}
 		// Store plaintexts to file
 		// TODO decide output format
-		File output = new File("");
+		// return output;
+	}
+
+	/**
+	 * Performs a recursive QuickSort over a given array of doubles
+	 * 
+	 * @param low
+	 *            the lowest index of the division (initially should be 0)
+	 * @param high
+	 *            the highest index of the division (initially should be length
+	 *            - 1)
+	 * @param output
+	 *            the array to be sorted
+	 * @return the sorted array
+	 */
+	public static double[] quickSort(int low, int high, double[] output) {
+		// Establish Low, High and Middle(The Pivot)
+		int i = low;
+		int j = high;
+		// Take Value from the middle
+		double pivot = output[low + (high - low) / 2];
+
+		// Sort Loop
+		while (i <= j) {
+			// Increase low pointer
+			while (output[i] < pivot) {
+				i++;
+			}
+
+			// Decrease high pointer
+			while (output[j] > pivot) {
+				j--;
+			}
+
+			// Swap the positions of the high and low
+			if (i <= j) {
+				double temp = output[i];
+				output[i] = output[j];
+				output[j] = temp;
+				i++;
+				j--;
+			}
+		}
+
+		// Recursion
+		if (low < j) {
+			// Create new division from low to j
+			quickSort(low, j, output);
+		}
+		if (i < high) {
+			// Create new division from i to high
+			quickSort(i, high, output);
+		}
+
+		// Return
 		return output;
 	}
 
