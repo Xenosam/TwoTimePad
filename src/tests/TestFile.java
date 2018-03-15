@@ -2,6 +2,7 @@ package tests;
 
 import static org.junit.Assert.*;
 
+import java.io.File;
 import java.io.IOException;
 
 import org.junit.Before;
@@ -82,7 +83,7 @@ public class TestFile {
 	 * Creating a seperate model using the AnalysisPair class for more helpful
 	 * analysis
 	 */
-	//@Test
+	// @Test
 	public void testSix() {
 		AnalysisPair[] aP = LanguageModel.createAPModel(model, 3);
 		assertEquals("TEST6: AnalysisPair model", (int) (model.prob("and") * 1000),
@@ -93,12 +94,12 @@ public class TestFile {
 	 * Same as testSix() but for models where ngrams are length 4 this test may
 	 * fail when a small amount of memory is alloted to JVM
 	 */
-	//@Test
+	// @Test
 	public void testSeven() {
 		AnalysisPair[] aP = LanguageModel.createAPModel(model, 4);
 		int correctindex = 0;
 		for (int i = 0; i < aP.length; i++) {
-			if (aP[i].getNgram().equals("and")) {
+			if (aP[i].getNGram().equals("and")) {
 				correctindex = i;
 				break;
 			}
@@ -112,7 +113,7 @@ public class TestFile {
 	 * Language Smoothing Test (Laplace)
 	 * 
 	 */
-	//@Test
+	// @Test
 	public void testEight() {
 		NGramProcessLM lm = LanguageModel.createModel(3);
 		laplace = LanguageModel.smoothingLaplace(model, model.maxNGram());
@@ -133,11 +134,27 @@ public class TestFile {
 	 */
 	@Test
 	public void testTen() {
-		double[] testArr = { 0.6, 0.3, 0.7, 0.1, 0.5, 0.4 };
-		double[] output = LanguageModel.quickSort(0, testArr.length - 1, testArr);
-		for(double d : output) 
-			System.out.println(d);
-		assertEquals("TEST10: QuickSort", true, output[5] > output[0]);
+		AnalysisPair[] testArr = new AnalysisPair[5];
+		testArr[0] = new AnalysisPair("000", 0.5);
+		testArr[1] = new AnalysisPair("001", 0.4);
+		testArr[2] = new AnalysisPair("002", 0.3);
+		testArr[3] = new AnalysisPair("003", 0.2);
+		testArr[4] = new AnalysisPair("004", 0.1);
+		AnalysisPair[] output = LanguageModel.quickSort(0, 4, testArr);
+		for (AnalysisPair p : output)
+			System.out.println(p.toString());
+		assertEquals("TEST10: QuickSort", true, output[4].getProbability() > output[0].getProbability());
+	}
+
+	/**
+	 * Testing a simiplified setup for the decryption process the assumeptions
+	 * include only taking the most prominent result for each cycle and a
+	 * simplified ignorant walk
+	 */
+	@Test
+	public void testEleven() {
+		String f = "C:/Users/Andrew/workspace/TwoTimeNLM/resources/ciphertext/test11.txt";
+		assertEquals("TEST11: Simple Decrypt", "", LanguageModel.simpleSolver(new File(f), model)[0]);
 	}
 
 	/*

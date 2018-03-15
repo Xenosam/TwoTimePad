@@ -34,10 +34,18 @@ public class AnalysisPair {
 	 * 
 	 * @return
 	 */
-	public String getNgram() {
+	public String getNGram() {
 		return this.ngram;
 	}
-
+	
+	/**
+	 * 
+	 * @param newNGram
+	 */
+	public void setNGram(String newNGram) {
+		this.ngram = newNGram;
+	}
+	
 	/**
 	 * 
 	 * @return
@@ -46,10 +54,14 @@ public class AnalysisPair {
 		return this.probability;
 	}
 
+	public void setProbability(double newProb) {
+		this.probability = newProb;
+	}
+	
 	/**
 	 * 
 	 */
 	public String toString() {
-		return this.getNgram() + ", " + this.getProbability();
+		return this.getNGram() + ", " + this.getProbability();
 	}
 }

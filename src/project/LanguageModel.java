@@ -70,6 +70,63 @@ public class LanguageModel {
 	}
 
 	/**
+	 * 
+	 * @param message
+	 * @param model
+	 */
+	public static String[] simpleSolver(File message, NGramProcessLM model) {
+		// Strings for current NGram
+		char[] strA = new char[model.maxNGram()];
+		char[] strB = new char[model.maxNGram()];
+		// Strings for building plaintext outputs
+		String strSA = "";
+		String strSB = "";
+		// Variables for reading in each character from file
+		int currentChar;
+		char c;
+		char[] cXOR;
+		// Array for sorting/scoring and filtering
+		AnalysisPair[] score = new AnalysisPair[256];
+		// Output
+		String[] output = new String[2];
+		try {
+			BufferedReader br = new BufferedReader(new FileReader(message));
+			while ((currentChar = br.read()) != -1) {
+				while (strA[model.maxNGram() - 2] == 0) {
+					// Operations until complete NGram is made
+				}
+				// Update c
+				c = (char) currentChar;
+				// Create XOR map
+				cXOR = XORHandler(c);
+				// EXPAND
+				for (int i = 0; i < 256; i++) {
+					strA[model.maxNGram() - 1] = (char) i;
+					strB[model.maxNGram() - 1] = cXOR[i];
+					// SCORE Strings: score[i] -> aPA[i] + aPB[i]
+					score[i].setNGram(strA.toString() + strB.toString());
+					score[i].setProbability(model.prob(strA.toString()) + model.prob(strB.toString()));
+				}
+				// SORT
+				score = quickSort(0, score.length - 1, score);
+				// FILTER
+				strSA += score[255].getNGram().toCharArray()[0];
+				strSB += score[255].getNGram().toCharArray()[1];
+			}
+			br.close();
+		} catch (IOException e) {
+			System.out.println(e.getMessage());
+			e.printStackTrace();
+		}
+		System.out.println("A: " + strSA);
+		System.out.println("B: " + strSB);
+		output[0] = strSA;
+		output[1] = strSB;
+		
+		return output;
+	}
+
+	/**
 	 * Takes a given file that represents the XOR of two plaintexts and uses a
 	 * language model to produce a walk through the hidden markov model and
 	 * solve for the original plaintexts
@@ -89,7 +146,7 @@ public class LanguageModel {
 		int currentChar;
 		char c;
 		char[] cXOR;
-		double[] score = new double[256];
+		AnalysisPair[] score = new AnalysisPair[256];
 		AnalysisPair[] aPA = new AnalysisPair[256];
 		AnalysisPair[] aPB = new AnalysisPair[256];
 		// Try / Catch IOException
@@ -129,12 +186,17 @@ public class LanguageModel {
 					temp = new AnalysisPair(strB.toString(), model.prob(strB.toString()));
 					aPB[i] = temp;
 					// Score Strings: score[i] -> aPA[i] + aPB[i]
-					score[i] = model.prob(strA.toString()) + model.prob(strB.toString());
+					score[i].setNGram(strA.toString() + strB.toString());
+					score[i].setProbability(model.prob(strA.toString()) + model.prob(strB.toString()));
 
 				}
 				// Sort Score
 				score = quickSort(0, score.length - 1, score);
 				// Filter top L results
+				for (int i = L; i < score.length; i++) {
+					score[i] = null;
+				}
+				// TODO Store information somehow
 			}
 			br.close();
 		} catch (IOException e) {
@@ -159,28 +221,28 @@ public class LanguageModel {
 	 *            the array to be sorted
 	 * @return the sorted array
 	 */
-	public static double[] quickSort(int low, int high, double[] output) {
+	public static AnalysisPair[] quickSort(int low, int high, AnalysisPair[] output) {
 		// Establish Low, High and Middle(The Pivot)
 		int i = low;
 		int j = high;
 		// Take Value from the middle
-		double pivot = output[low + (high - low) / 2];
+		AnalysisPair pivot = output[low + (high - low) / 2];
 
 		// Sort Loop
 		while (i <= j) {
 			// Increase low pointer
-			while (output[i] < pivot) {
+			while (output[i].getProbability() < pivot.getProbability()) {
 				i++;
 			}
 
 			// Decrease high pointer
-			while (output[j] > pivot) {
+			while (output[j].getProbability() > pivot.getProbability()) {
 				j--;
 			}
 
 			// Swap the positions of the high and low
 			if (i <= j) {
-				double temp = output[i];
+				AnalysisPair temp = output[i];
 				output[i] = output[j];
 				output[j] = temp;
 				i++;
@@ -353,7 +415,7 @@ public class LanguageModel {
 		// Print results
 		AnalysisPair[] output = new AnalysisPair[topX];
 		for (int i = 0; i < topX; i++) {
-			output[i] = new AnalysisPair(aP[i].getNgram(), aP[i].getProbability());
+			output[i] = new AnalysisPair(aP[i].getNGram(), aP[i].getProbability());
 			// OUTPUT: System.out.println("Rank " + (i + 1) + ": " +
 			// aP[i].toString());
 		}
