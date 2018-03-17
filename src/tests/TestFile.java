@@ -2,7 +2,6 @@ package tests;
 
 import static org.junit.Assert.*;
 
-import java.io.File;
 import java.io.IOException;
 
 import org.junit.Before;
@@ -30,6 +29,14 @@ public class TestFile {
 		model4 = LanguageModel.train(LanguageModel.createModel(4),
 				"C:/Users/Andrew/workspace/TwoTimeNLM/resources/corpus/A Tale of Two Cities - Charles Dickens.txt");
 	}
+
+	/*
+	 * @Test public void quick() { NGramProcessLM lm =
+	 * LanguageModel.train(LanguageModel.createModel(1),
+	 * "C:/Users/Andrew/workspace/TwoTimeNLM/resources/corpus/A Tale of Two Cities - Charles Dickens.txt"
+	 * ); for(int i = 0; i < 256; i++) { System.out.println((char)i + ": " +
+	 * lm.prob("" + (char)i)); } }
+	 */
 
 	/**
 	 * Creates Models and tests that NGram length is correct
@@ -141,23 +148,38 @@ public class TestFile {
 		testArr[3] = new AnalysisPair("003", 0.2);
 		testArr[4] = new AnalysisPair("004", 0.1);
 		AnalysisPair[] output = LanguageModel.quickSort(0, 4, testArr);
-		for (AnalysisPair p : output)
-			System.out.println(p.toString());
 		assertEquals("TEST10: QuickSort", true, output[4].getProbability() > output[0].getProbability());
 	}
 
+	/**
+	 * Test the char array string timming
+	 */
+	@Test
+	public void testEleven() {
+		char[] out = {'e','l','l','o', 0};
+		assertEquals("TEST11: CharTrim", new String(out), new String(LanguageModel.stringTrim("Hello".toCharArray())));
+	}
+	
 	/**
 	 * Testing a simiplified setup for the decryption process the assumeptions
 	 * include only taking the most prominent result for each cycle and a
 	 * simplified ignorant walk
 	 */
-	@Test
-	public void testEleven() {
-		String f = "C:/Users/Andrew/workspace/TwoTimeNLM/resources/ciphertext/test11.txt";
-		assertEquals("TEST11: Simple Decrypt", "", LanguageModel.simpleSolver(new File(f), model)[0]);
+	//@Test
+	public void testTwelve() {
+		char[] f = createXOR(((char) 2 + "secret data").toCharArray(), ((char) 2 + "hidden info").toCharArray());
+		assertEquals("TEST1w: Simple Decrypt", "", LanguageModel.simpleSolver(f, model)[0]);
 	}
 
 	/*
 	 * @Test public void test() { assertEquals("TEST:", 0, 0); }
 	 */
+
+	public static char[] createXOR(char[] a, char[] b) {
+		char[] output = new char[a.length];
+		for (int i = 0; i < a.length; i++) {
+			output[i] = (char) (a[i] ^ b[i]);
+		}
+		return output;
+	}
 }

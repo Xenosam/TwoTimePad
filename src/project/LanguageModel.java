@@ -69,12 +69,33 @@ public class LanguageModel {
 
 	}
 
+	public static char[] stringTrim(char[] strA) {
+		String s = new String(strA);
+		System.out.println("Pre Trim: " + s);
+		for (int j = 1; j < strA.length; j++) {
+			// Remove least significant character
+			strA[j - 1] = strA[j];
+		}
+		strA[strA.length - 1] = 0;
+		s = new String(strA);
+		System.out.println("Post Trim: " + s);
+		return strA;
+	}
+
 	/**
 	 * 
 	 * @param message
 	 * @param model
 	 */
-	public static String[] simpleSolver(File message, NGramProcessLM model) {
+	public static String[] simpleSolver(char[] message, NGramProcessLM model) {
+		/*
+		 * System.out.println(message.toString()); for(int i = 0; i <
+		 * message.length; i++) { System.out.print(message[i]); }
+		 * System.out.println("\n" + message.length); for(int i = 0; i <
+		 * message.toString().length(); i++) {
+		 * System.out.print(message.toString().charAt(i)); }
+		 * System.out.println("\n" + message.toString().length());
+		 */
 		// Strings for current NGram
 		char[] strA = new char[model.maxNGram()];
 		char[] strB = new char[model.maxNGram()];
@@ -82,47 +103,85 @@ public class LanguageModel {
 		String strSA = "";
 		String strSB = "";
 		// Variables for reading in each character from file
-		int currentChar;
 		char c;
 		char[] cXOR;
 		// Array for sorting/scoring and filtering
 		AnalysisPair[] score = new AnalysisPair[256];
 		// Output
 		String[] output = new String[2];
-		try {
-			BufferedReader br = new BufferedReader(new FileReader(message));
-			while ((currentChar = br.read()) != -1) {
-				while (strA[model.maxNGram() - 2] == 0) {
-					// Operations until complete NGram is made
+		for (int i = 0; i < message.length; i++) {
+			// Update c
+			c = message[i];
+			// Create XOR map
+			cXOR = XORHandler(c);
+			// Code until ngram size is reached
+			System.out.println("int i: " + i + "\nchar c: " + c + "\nint c: " + Integer.valueOf((char) c));
+			if (i <= model.maxNGram() - 2) {
+				if (i == 0) {
+					// File Load: First read character is ASCII - 02
+					strA[i] = (char) 2;
+					strB[i] = (char) 2;
+					// Update output string
+					strSA += strA[i];
+					strSB += strB[i];
+					System.out.println("A: " + strSA);
+					System.out.println("B: " + strSB);
+
+				} else {
+					NGramProcessLM temp = createModel(i);
+					// EXPAND
+					for (int k = 0; k < 256; k++) {
+						strA[i] = (char) k;
+						strB[i] = cXOR[k];
+						String s = (strA.toString() + strB.toString());
+						double p = (temp.prob(strA.toString() + temp.prob(strB.toString())));
+						score[k] = new AnalysisPair(s, p);
+					}
+					// SORT
+					score = quickSort(0, score.length - 1, score);
+					// FILTER
+					// Rest current ngram
+					strA[i] = score[255].getNGram().toCharArray()[i];
+					strB[i] = score[255].getNGram().toCharArray()[i * 2 + 1];
+					// Update output string
+					strSA += strA[i];
+					strSB += strB[i];
+					System.out.println("A: " + strSA);
+					System.out.println("B: " + strSB);
 				}
-				// Update c
-				c = (char) currentChar;
-				// Create XOR map
-				cXOR = XORHandler(c);
+			} else {
+				if (i != model.maxNGram() - 1) {
+					strA = stringTrim(strA);
+					strB = stringTrim(strB);
+				}
 				// EXPAND
-				for (int i = 0; i < 256; i++) {
-					strA[model.maxNGram() - 1] = (char) i;
-					strB[model.maxNGram() - 1] = cXOR[i];
+				for (int j = 0; j < 256; j++) {
+					strA[model.maxNGram() - 1] = (char) j;
+					strB[model.maxNGram() - 1] = cXOR[j];
 					// SCORE Strings: score[i] -> aPA[i] + aPB[i]
-					score[i].setNGram(strA.toString() + strB.toString());
-					score[i].setProbability(model.prob(strA.toString()) + model.prob(strB.toString()));
+					String s = (strA.toString() + strB.toString());
+					double p = (model.prob(strA.toString()) + model.prob(strB.toString()));
+					score[j] = new AnalysisPair(s, p);
 				}
 				// SORT
 				score = quickSort(0, score.length - 1, score);
 				// FILTER
-				strSA += score[255].getNGram().toCharArray()[0];
-				strSB += score[255].getNGram().toCharArray()[1];
+				// Rest current ngram
+				strA[model.maxNGram() - 1] = score[255].getNGram().toCharArray()[model.maxNGram() * 2 - 1];
+				strB[model.maxNGram() - 1] = score[255].getNGram().toCharArray()[model.maxNGram() - 1];
+				// Update output string
+				strSA += strA[model.maxNGram() - 1];
+				strSB += strB[model.maxNGram() - 1];
+				System.out.println("A: " + strSA);
+				System.out.println("B: " + strSB);
 			}
-			br.close();
-		} catch (IOException e) {
-			System.out.println(e.getMessage());
-			e.printStackTrace();
 		}
-		System.out.println("A: " + strSA);
-		System.out.println("B: " + strSB);
+		// System.out.println("A: " + strSA);
+		// System.out.println("B: " + strSB);
+
 		output[0] = strSA;
 		output[1] = strSB;
-		
+
 		return output;
 	}
 
