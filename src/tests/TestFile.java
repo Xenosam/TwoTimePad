@@ -156,19 +156,25 @@ public class TestFile {
 	 */
 	@Test
 	public void testEleven() {
-		char[] out = {'e','l','l','o', 0};
+		char[] out = { 'e', 'l', 'l', 'o', 0 };
 		assertEquals("TEST11: CharTrim", new String(out), new String(LanguageModel.stringTrim("Hello".toCharArray())));
 	}
-	
+
 	/**
 	 * Testing a simiplified setup for the decryption process the assumeptions
 	 * include only taking the most prominent result for each cycle and a
 	 * simplified ignorant walk
 	 */
-	//@Test
+	@Test
 	public void testTwelve() {
 		char[] f = createXOR(((char) 2 + "secret data").toCharArray(), ((char) 2 + "hidden info").toCharArray());
-		assertEquals("TEST1w: Simple Decrypt", "", LanguageModel.simpleSolver(f, model)[0]);
+		for (int i = 0; i < f.length; i++) {
+			System.out.println("i: " + i);
+			System.out.println("char: " + f[i]);
+			System.out.println("int val: " + Integer.valueOf((int) f[i]));
+		}
+		char[] c = { 2, 'C', 'm', 'b', 's', 'n', ' ', 't', 'e', 'e', '|', ' ' };
+		assertEquals("TEST12: Simple Decrypt", new String(c), LanguageModel.simpleSolver(f, model)[0]);
 	}
 
 	/*

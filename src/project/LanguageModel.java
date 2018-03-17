@@ -70,15 +70,11 @@ public class LanguageModel {
 	}
 
 	public static char[] stringTrim(char[] strA) {
-		String s = new String(strA);
-		System.out.println("Pre Trim: " + s);
 		for (int j = 1; j < strA.length; j++) {
 			// Remove least significant character
 			strA[j - 1] = strA[j];
 		}
 		strA[strA.length - 1] = 0;
-		s = new String(strA);
-		System.out.println("Post Trim: " + s);
 		return strA;
 	}
 
@@ -88,14 +84,6 @@ public class LanguageModel {
 	 * @param model
 	 */
 	public static String[] simpleSolver(char[] message, NGramProcessLM model) {
-		/*
-		 * System.out.println(message.toString()); for(int i = 0; i <
-		 * message.length; i++) { System.out.print(message[i]); }
-		 * System.out.println("\n" + message.length); for(int i = 0; i <
-		 * message.toString().length(); i++) {
-		 * System.out.print(message.toString().charAt(i)); }
-		 * System.out.println("\n" + message.toString().length());
-		 */
 		// Strings for current NGram
 		char[] strA = new char[model.maxNGram()];
 		char[] strB = new char[model.maxNGram()];
@@ -133,8 +121,8 @@ public class LanguageModel {
 					for (int k = 0; k < 256; k++) {
 						strA[i] = (char) k;
 						strB[i] = cXOR[k];
-						String s = (strA.toString() + strB.toString());
-						double p = (temp.prob(strA.toString() + temp.prob(strB.toString())));
+						String s = (new String(strA.toString()) + new String(strB));
+						double p = temp.prob(new String(strA)) + temp.prob(new String(strB));
 						score[k] = new AnalysisPair(s, p);
 					}
 					// SORT
@@ -159,8 +147,8 @@ public class LanguageModel {
 					strA[model.maxNGram() - 1] = (char) j;
 					strB[model.maxNGram() - 1] = cXOR[j];
 					// SCORE Strings: score[i] -> aPA[i] + aPB[i]
-					String s = (strA.toString() + strB.toString());
-					double p = (model.prob(strA.toString()) + model.prob(strB.toString()));
+					String s = new String(strA) + new String(strB);
+					double p = model.prob(new String(strA)) + model.prob(new String(strB));
 					score[j] = new AnalysisPair(s, p);
 				}
 				// SORT
@@ -176,8 +164,8 @@ public class LanguageModel {
 				System.out.println("B: " + strSB);
 			}
 		}
-		// System.out.println("A: " + strSA);
-		// System.out.println("B: " + strSB);
+		System.out.println("OUTPUT A: " + strSA);
+		System.out.println("OUTPUT B: " + strSB);
 
 		output[0] = strSA;
 		output[1] = strSB;
