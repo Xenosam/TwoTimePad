@@ -2,6 +2,8 @@ package tests;
 
 import static org.junit.Assert.*;
 
+import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
 
 import org.junit.Before;
@@ -173,8 +175,26 @@ public class TestFile {
 			System.out.println("char: " + f[i]);
 			System.out.println("int val: " + Integer.valueOf((int) f[i]));
 		}
-		char[] c = { 2, 'C', 'm', 'b', 's', 'n', ' ', 't', 'e', 'e', '|', ' ' };
+		char[] c = { 2, 'C', 'a', 'r', 'e', ' ', 't', 'h', 'e', ' ', 't', 'h' };
 		assertEquals("TEST12: Simple Decrypt", new String(c), LanguageModel.simpleSolver(f, model)[0]);
+	}
+
+	/**
+	 * Testing the final more complex solver solution for retaining an amount of
+	 * best guesses and extending from there
+	 * 
+	 * @throws IOException Exception for the IO complexities
+	 */
+	@Test
+	public void testThirteen() throws IOException {
+		FileWriter fw = new FileWriter("./newfile.txt");
+		fw.append(new String(
+				createXOR(((char) 2 + "secret data").toCharArray(), ((char) 2 + "hidden info").toCharArray())));
+		File f = new File("./newfile.txt");
+		fw.close();
+		assertEquals("TEST12: Simple Decrypt", "", LanguageModel.solver(f, model, 5)[0]);
+		f.delete();
+			
 	}
 
 	/*
