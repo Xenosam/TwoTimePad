@@ -64,7 +64,7 @@ public class TestFile {
 	@Test
 	public void testThree() {
 		AnalysisPair aP = new AnalysisPair("and", 0.007321452);
-		assertEquals("TEST3: Analysis Pair", "and, 0.007321452", aP.toString());
+		assertEquals("TEST3: Analysis Pair", "NGRAM A: and\nNGRAM B: null\nDATA A: null\nDATA B: null\nPROB: 0.007321452", aP.toString());
 	}
 
 	/**
@@ -189,7 +189,7 @@ public class TestFile {
 	public void testThirteen() throws IOException {
 		FileWriter fw = new FileWriter("./newfile.txt");
 		fw.append(new String(
-				createXOR(((char) 2 + "secret data").toCharArray(), ((char) 2 + "hidden info").toCharArray())));
+				createXOR(((char) 2 + "this is the test!").toCharArray(), ((char) 2 + "i am also to test").toCharArray())));
 		File f = new File("./newfile.txt");
 		fw.close();
 		assertEquals("TEST12: Simple Decrypt", "", LanguageModel.solver(f, model, 5)[0]);
