@@ -51,7 +51,7 @@ public class TestFile {
 
 	/**
 	 * Recieves useful information from model and grabs the probability for a
-	 * given n-gram
+	 * given n-gramw
 	 */
 	@Test
 	public void testTwo() throws IOException {
@@ -192,7 +192,15 @@ public class TestFile {
 				createXOR(((char) 2 + "this is the test!").toCharArray(), ((char) 2 + "i am also to test").toCharArray())));
 		File f = new File("./newfile.txt");
 		fw.close();
-		assertEquals("TEST12: Simple Decrypt", "", LanguageModel.solver(f, model, 5)[0]);
+		int x = 3;
+		String[] output = LanguageModel.solver(f, model, x);
+		for(int i = 0; i < 3; i++) {
+			System.out.println("i: " + i);
+			System.out.println("A: " + output[i]);
+			System.out.println("B: " + output[i+3]);
+		}
+		String o = output[4].substring(3, 20);
+		assertEquals("TEST12: Simple Decrypt", "I the the to ys'!", o);
 		f.delete();
 			
 	}

@@ -57,7 +57,7 @@ public class AnalysisPair {
 		this.data1 = d1;
 		this.data2 = d2;
 	}
-	
+
 	public String getData1() {
 		return this.data1;
 	}

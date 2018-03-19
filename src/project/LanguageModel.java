@@ -69,6 +69,140 @@ public class LanguageModel {
 
 	}
 
+	public static String[] solver(File message, NGramProcessLM model, int x) {
+		String[] output = new String[x*2];
+		int currentChar;
+		char c;
+		char[] cXOR;
+		boolean b = false;
+		char[] strA = new char[model.maxNGram()];
+		char[] strB = new char[model.maxNGram()];
+		AnalysisPair[] workQueue = new AnalysisPair[x];
+		AnalysisPair[] input = new AnalysisPair[x * x];
+		try {
+			// Open File
+			BufferedReader br = new BufferedReader(new FileReader(message));
+			// Read until file is closed
+			int loop = 0;
+			while ((currentChar = br.read()) != -1) {
+				System.out.println("LOOP: " + loop);
+				int index = 0;
+				// Create XOR Map for input character
+				c = (char) currentChar;
+				cXOR = XORHandler(c);
+				// Handle First Character
+				if (b == false) {
+					strA[0] = 2;
+					strB[0] = 2;
+					String s = new String(strA);
+					String t = new String(strB);
+					workQueue[0] = new AnalysisPair(s, t, model.prob(s) + model.prob(t), s, t);
+					b = true;
+					loop++;
+					continue;
+				} else {
+					// Act for each item in the workqueue
+					for (int i = 0; i < workQueue.length; i++) {
+						System.out.println("i: " + i);
+						if (workQueue[i] == null) {
+							System.out.println("CONTINUE");
+							continue;
+						} else {
+							if (loop < model.maxNGram() - 1) {
+								// SKIP TRIM
+								// Make NGRM model for loop vals
+								NGramProcessLM tempModel = createModel(loop + 1);
+								AnalysisPair[] temp = new AnalysisPair[256];
+								// EXPAND
+								for (int j = 0; j < 256; j++) {
+									System.out.println("J1: " + j);
+									AnalysisPair aP = workQueue[i];
+									strA = aP.getNGram().toCharArray();
+									strB = aP.getNGram2().toCharArray();
+									char d = (char) j;
+									char e = cXOR[j];
+									strA[loop] = d;
+									strB[loop] = e;
+									// May have to edit to make sure that
+									// probability checks that correct ngram
+									// i.e. only [0] - [loop]
+									double prob = tempModel.prob(new String(strA)) + tempModel.prob(new String(strB));
+									temp[j] = new AnalysisPair(new String(strA), new String(strB), prob, aP.getData1(),
+											aP.getData2());
+									temp[j].addData(d, e);
+								}
+								// SORT
+								temp = quickSort(0, 255, temp);
+								// FILTER
+								for (int j = 0; j < x; j++) {
+									input[index] = temp[255 - j];
+									System.out.println("INDEX: " + index);
+									index++;
+								}
+							} else {
+								if (loop != model.maxNGram() - 1) {
+									// TRIM (if neccessary)
+									strA = stringTrim(workQueue[i].getNGram().toCharArray());
+									strB = stringTrim(workQueue[i].getNGram2().toCharArray());
+								}
+								// EXPAND
+								AnalysisPair[] temp = new AnalysisPair[256];
+								for (int j = 0; j < 256; j++) {
+									System.out.println("J2: " + j);
+									char d = (char) j;
+									char e = cXOR[j];
+									strA[model.maxNGram() - 1] = d;
+									strB[model.maxNGram() - 1] = e;
+									double prob = model.prob(new String(strA)) + model.prob(new String(strB));
+									temp[j] = new AnalysisPair(new String(strA), new String(strB), prob,
+											workQueue[i].getData1(), workQueue[i].getData2());
+									temp[j].addData(d, e);
+								}
+								// SORT
+								temp = quickSort(0, 255, temp);
+								// FILTER
+								for (int j = 0; j < x; j++) {
+									System.out.println("INDEX: " + index);
+									input[index] = temp[255 - j];
+									index++;
+								}
+							}
+						}
+					}
+				}
+				// SORT INPUT
+				workQueue = new AnalysisPair[x];
+				if (loop == 1) {
+					System.out.println("FLAG 1");
+					input = quickSort(0, x - 1, input);
+					for (int j = 0; j < x; j++) {
+						workQueue[j] = input[(x - 1) - j];
+					}
+				} else {
+					System.out.println("FLAG 2");
+					input = quickSort(0, x * x - 1, input);
+					// FILTER
+					for (int j = 0; j < x; j++) {
+						workQueue[j] = input[(input.length - 1) - j];
+					}
+				}
+				input = new AnalysisPair[x * x];
+				loop++;
+			}
+			br.close();
+		} catch (IOException e) {
+			System.out.println(e.getMessage());
+			e.printStackTrace();
+		}
+		for(int i = 0 ; i < workQueue.length; i++) {
+			output[i] = workQueue[i].getData1();
+		}
+		for(int i = 0; i < workQueue.length; i++) {
+			output[i + workQueue.length] = workQueue[i].getData2();
+		}
+		return output;
+	}
+
 	public static char[] stringTrim(char[] strA) {
 		for (int j = 1; j < strA.length; j++) {
 			// Remove least significant character
@@ -170,164 +304,6 @@ public class LanguageModel {
 		output[0] = strSA;
 		output[1] = strSB;
 
-		return output;
-	}
-
-	/**
-	 * Takes a given file that represents the XOR of two plaintexts and uses a
-	 * language model to produce a walk through the hidden markov model and
-	 * solve for the original plaintexts
-	 * 
-	 * @param message
-	 *            the input file to be decrypted
-	 * @param model
-	 *            the language model being used
-	 * @param L
-	 *            the amount of potential paths to remember
-	 * @return
-	 */
-	public static String[] solver(File message, NGramProcessLM model, int x) {
-		// Strings for current NGram
-		char[] strA = new char[model.maxNGram()];
-		char[] strB = new char[model.maxNGram()];
-		// Array for sorting/scoring and filtering
-		AnalysisPair[] past = new AnalysisPair[x * x];
-		AnalysisPair[] current;
-		// Output
-		String[] output = new String[x * 2];
-		int gate = 0;
-		try {
-			BufferedReader br = new BufferedReader(new FileReader(message));
-			int currentChar;
-			while ((currentChar = br.read()) != -1) {
-				System.out.println("FLAG1");
-				current = new AnalysisPair[x * x];
-				int i = 0;
-				if (past[0] == null) {
-					System.out.println("FLAG2");
-					// First Loop Control: Both should = File Open Character
-					strA[0] = 2;
-					strB[0] = 2;
-					// Fill array
-					past[0] = new AnalysisPair(new String(strA), new String(strB), 0, new String(strA),
-							new String(strB));
-					// Skip out of loop
-					continue;
-				}
-				for (AnalysisPair aP : past) {
-					System.out.println("FLAG3");
-					// For each of the current guesses
-					if (aP != null) {
-						strA = aP.getNGram().toCharArray();
-						strB = aP.getNGram2().toCharArray();
-						for (AnalysisPair aP2 : expandFilterSort(aP, currentChar, model, (char) currentChar)) {
-							System.out.println("FLAG4");
-							// Read in top X outputs for strA and strB
-							current[i] = new AnalysisPair(aP2.getNGram(), aP2.getNGram2(), aP2.getProbability());
-							AnalysisPair a = current[i];
-							System.out.println(a.toString());
-							System.out.println("strB: " + new String(strB));
-							System.out.println("ap2<strB>: " + new String(aP.getNGram2()));
-							i++;
-						}
-					}
-				}
-				// Sort all outputs
-				current = quickSort(0, current.length - 1, current);
-				// Filter
-				AnalysisPair[] temp = new AnalysisPair[x];
-				for (int j = 0; j < x; j++) {
-					temp[j] = current[255 - j];
-				}
-				// Use the final array as the input for next loop
-				past = temp.clone();
-				// Step loop count if neccessary
-				if (gate < model.maxNGram()) {
-					gate++;
-				}
-			}
-			br.close();
-		} catch (IOException e) {
-			System.out.println(e.getMessage());
-			e.printStackTrace();
-		}
-
-		// TODO: OUTPUT FORMAT
-		for (int i = 0; i < past.length - 1; i++) {
-			output[i] = past[i].getData()[0];
-			output[i + 1] = past[i].getData()[1];
-			i++;
-		}
-		return output;
-	}
-
-	/**
-	 * // Take in current ngram // Expand ngram // Sort ngram // Return best X
-	 * 
-	 * @param ngram
-	 * @param x
-	 * @param model
-	 */
-	public static AnalysisPair[] expandFilterSort(AnalysisPair aP, int x, NGramProcessLM model, char c) {
-		// AnalysisPair array for output
-		AnalysisPair[] score = new AnalysisPair[256];
-		AnalysisPair[] output = new AnalysisPair[x];
-		// Strings for building plaintext outputs
-		// Variables for reading in each character from file
-		char[] cXOR;
-		// Check if ngram is at limit
-		int i = 0;
-		// Contextualizing aP
-		char[] strA = aP.getNGram().toCharArray();
-		char[] strB = aP.getNGram2().toCharArray();
-		for (int j = 0; j < strA.length; j++) {
-			if (strA[j] != 0) {
-				i++;
-			}
-		}
-		// Create XOR map
-		cXOR = XORHandler(c);
-		if (strA.length <= model.maxNGram() - 2) {
-
-			NGramProcessLM temp = createModel(i);
-			// EXPAND
-			for (int k = 0; k < 256; k++) {
-				strA[i] = (char) k;
-				strB[i] = cXOR[k];
-				String s = new String(strA);
-				String t = new String(strB);
-				double p = temp.prob(new String(strA)) + temp.prob(new String(strB));
-				score[k] = new AnalysisPair(s, t, p, aP.getData1() + (char) k, aP.getData2() + cXOR[k]);
-			}
-			// SORT
-			score = quickSort(0, score.length - 1, score);
-			// FILTER
-			for (int j = 0; j < x; j++) {
-				output[j] = score[255 - j];
-			}
-
-		} else {
-			if (i != model.maxNGram() - 1) {
-				strA = stringTrim(strA);
-				strB = stringTrim(strB);
-			}
-			// EXPAND
-			for (int j = 0; j < 256; j++) {
-				strA[model.maxNGram() - 1] = (char) j;
-				strB[model.maxNGram() - 1] = cXOR[j];
-				// SCORE Strings: score[i] -> aPA[i] + aPB[i]
-				String s = new String(strA);
-				String t = new String(strB);
-				double p = (model.prob(new String(strA)) + model.prob(new String(strB)));
-				score[j] = new AnalysisPair(s, t, p, aP.getData1() + (char) j, aP.getData2() + cXOR[j]);
-			}
-			// SORT
-			score = quickSort(0, score.length - 1, score);
-			// FILTER
-			for (int j = 0; j < x; j++) {
-				output[j] = score[255 - j];
-			}
-		}
 		return output;
 	}
 
