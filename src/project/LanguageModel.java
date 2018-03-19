@@ -58,9 +58,9 @@ public class LanguageModel {
 				if (i == 1) {
 					model = smoothingLaplace(model, n);
 				} else if (i == 2) {
-					// model = smoothingGoodTuring(model, n);
+					model = smoothingGoodTuring(model, n);
 				} else if (i == 3) {
-					// model = smoothingWittenBell(model, n);
+					model = smoothingWittenBell(model, n);
 				} else {
 					System.out.println("Invalid Input");
 					fail = true;
@@ -573,6 +573,14 @@ public class LanguageModel {
 		return model;
 	}
 
+	public static NGramProcessLM smoothingGoodTuring(NGramProcessLM model, int n) {
+		return null;
+	}
+	
+	public static NGramProcessLM smoothingWittenBell(NGramProcessLM model, int n) {
+		return null;
+	}
+	
 	/**
 	 * This method is for saving an NGramProcessLM model to the disc
 	 * 

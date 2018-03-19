@@ -16,7 +16,7 @@ import project.LanguageModel;
 
 public class TestFile {
 
-	NGramProcessLM model, model4, laplace;
+	NGramProcessLM model, model4, laplace, gt, wb;
 
 	/**
 	 * Setup method for initialising test variables
@@ -31,14 +31,6 @@ public class TestFile {
 		model4 = LanguageModel.train(LanguageModel.createModel(4),
 				"C:/Users/Andrew/workspace/TwoTimeNLM/resources/corpus/A Tale of Two Cities - Charles Dickens.txt");
 	}
-
-	/*
-	 * @Test public void quick() { NGramProcessLM lm =
-	 * LanguageModel.train(LanguageModel.createModel(1),
-	 * "C:/Users/Andrew/workspace/TwoTimeNLM/resources/corpus/A Tale of Two Cities - Charles Dickens.txt"
-	 * ); for(int i = 0; i < 256; i++) { System.out.println((char)i + ": " +
-	 * lm.prob("" + (char)i)); } }
-	 */
 
 	/**
 	 * Creates Models and tests that NGram length is correct
@@ -64,7 +56,8 @@ public class TestFile {
 	@Test
 	public void testThree() {
 		AnalysisPair aP = new AnalysisPair("and", 0.007321452);
-		assertEquals("TEST3: Analysis Pair", "NGRAM A: and\nNGRAM B: null\nDATA A: null\nDATA B: null\nPROB: 0.007321452", aP.toString());
+		assertEquals("TEST3: Analysis Pair",
+				"NGRAM A: and\nNGRAM B: null\nDATA A: null\nDATA B: null\nPROB: 0.007321452", aP.toString());
 	}
 
 	/**
@@ -126,7 +119,6 @@ public class TestFile {
 	public void testEight() {
 		NGramProcessLM lm = LanguageModel.createModel(3);
 		laplace = LanguageModel.smoothingLaplace(model, model.maxNGram());
-
 		assertEquals("TEST8: Laplace Smoothing", true, laplace.prob("g,!") > lm.prob("g,!"));
 	}
 
@@ -183,26 +175,47 @@ public class TestFile {
 	 * Testing the final more complex solver solution for retaining an amount of
 	 * best guesses and extending from there
 	 * 
-	 * @throws IOException Exception for the IO complexities
+	 * @throws IOException
+	 *             Exception for the IO complexities
 	 */
 	@Test
 	public void testThirteen() throws IOException {
 		FileWriter fw = new FileWriter("./newfile.txt");
-		fw.append(new String(
-				createXOR(((char) 2 + "this is the test!").toCharArray(), ((char) 2 + "i am also to test").toCharArray())));
+		fw.append(new String(createXOR(((char) 2 + "this is the test!").toCharArray(),
+				((char) 2 + "i am also to test").toCharArray())));
 		File f = new File("./newfile.txt");
 		fw.close();
 		int x = 3;
 		String[] output = LanguageModel.solver(f, model, x);
-		for(int i = 0; i < 3; i++) {
+		for (int i = 0; i < 3; i++) {
 			System.out.println("i: " + i);
 			System.out.println("A: " + output[i]);
-			System.out.println("B: " + output[i+3]);
+			System.out.println("B: " + output[i + 3]);
 		}
 		String o = output[4].substring(3, 20);
 		assertEquals("TEST12: Simple Decrypt", "I the the to ys'!", o);
 		f.delete();
-			
+
+	}
+
+	/**
+	 * Testing the language smoothing for a Good-Turing Solution
+	 */
+	@Test
+	public void testFourteen() {
+		NGramProcessLM lm = LanguageModel.createModel(3);
+		gt = LanguageModel.smoothingGoodTuring(model, model.maxNGram());
+		assertEquals("TEST14: Good Turing Smoothing", true, gt.prob("g,!") > lm.prob("g,!"));
+	}
+
+	/**
+	 * Testing the language smoothing for a Witten-Bell Solution
+	 */
+	@Test
+	public void testFifteen() {
+		NGramProcessLM lm = LanguageModel.createModel(3);
+		wb = LanguageModel.smoothingWittenBell(model, model.maxNGram());
+		assertEquals("TEST8: Witten Bell Smoothing", true, wb.prob("g,!") > lm.prob("g,!"));
 	}
 
 	/*
