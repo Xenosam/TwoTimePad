@@ -3,6 +3,7 @@ package tests;
 import static org.junit.Assert.*;
 
 import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
 
 import org.junit.Before;
@@ -31,6 +32,14 @@ public class TestFile {
 				"C:/Users/Andrew/workspace/TwoTimeNLM/resources/corpus/A Tale of Two Cities - Charles Dickens.txt");
 	}
 
+	/*
+	 * @Test public void quick() { NGramProcessLM lm =
+	 * LanguageModel.train(LanguageModel.createModel(1),
+	 * "C:/Users/Andrew/workspace/TwoTimeNLM/resources/corpus/A Tale of Two Cities - Charles Dickens.txt"
+	 * ); for(int i = 0; i < 256; i++) { System.out.println((char)i + ": " +
+	 * lm.prob("" + (char)i)); } }
+	 */
+
 	/**
 	 * Creates Models and tests that NGram length is correct
 	 */
@@ -42,7 +51,7 @@ public class TestFile {
 
 	/**
 	 * Recieves useful information from model and grabs the probability for a
-	 * given n-gram
+	 * given n-gramw
 	 */
 	@Test
 	public void testTwo() throws IOException {
@@ -55,7 +64,7 @@ public class TestFile {
 	@Test
 	public void testThree() {
 		AnalysisPair aP = new AnalysisPair("and", 0.007321452);
-		assertEquals("TEST3: Analysis Pair", "and, 0.007321452", aP.toString());
+		assertEquals("TEST3: Analysis Pair", "NGRAM A: and\nNGRAM B: null\nDATA A: null\nDATA B: null\nPROB: 0.007321452", aP.toString());
 	}
 
 	/**
@@ -99,7 +108,7 @@ public class TestFile {
 		AnalysisPair[] aP = LanguageModel.createAPModel(model, 4);
 		int correctindex = 0;
 		for (int i = 0; i < aP.length; i++) {
-			if (aP[i].getNgram().equals("and")) {
+			if (aP[i].getNGram().equals("and")) {
 				correctindex = i;
 				break;
 			}
@@ -113,7 +122,7 @@ public class TestFile {
 	 * Language Smoothing Test (Laplace)
 	 * 
 	 */
-	@Test
+	// @Test
 	public void testEight() {
 		NGramProcessLM lm = LanguageModel.createModel(3);
 		laplace = LanguageModel.smoothingLaplace(model, model.maxNGram());
@@ -126,13 +135,85 @@ public class TestFile {
 	 */
 	@Test
 	public void testNine() {
-		assertEquals("TEST9: XOR Handler", 0, LanguageModel.solver(new File("testNine"), model, 5));
+		assertEquals("TEST9: XOR Handler", '_', LanguageModel.XORHandler('u')[42]);
 	}
-	
-	/*
+
+	/**
+	 * Testing the QuickSort Method for score sorting
+	 */
 	@Test
-	public void test() {
-		assertEquals("TEST:", 0, 0);
+	public void testTen() {
+		AnalysisPair[] testArr = new AnalysisPair[5];
+		testArr[0] = new AnalysisPair("000", 0.5);
+		testArr[1] = new AnalysisPair("001", 0.4);
+		testArr[2] = new AnalysisPair("002", 0.3);
+		testArr[3] = new AnalysisPair("003", 0.2);
+		testArr[4] = new AnalysisPair("004", 0.1);
+		AnalysisPair[] output = LanguageModel.quickSort(0, 4, testArr);
+		assertEquals("TEST10: QuickSort", true, output[4].getProbability() > output[0].getProbability());
 	}
-	*/
+
+	/**
+	 * Test the char array string timming
+	 */
+	@Test
+	public void testEleven() {
+		char[] out = { 'e', 'l', 'l', 'o', 0 };
+		assertEquals("TEST11: CharTrim", new String(out), new String(LanguageModel.stringTrim("Hello".toCharArray())));
+	}
+
+	/**
+	 * Testing a simiplified setup for the decryption process the assumeptions
+	 * include only taking the most prominent result for each cycle and a
+	 * simplified ignorant walk
+	 */
+	@Test
+	public void testTwelve() {
+		char[] f = createXOR(((char) 2 + "secret data").toCharArray(), ((char) 2 + "hidden info").toCharArray());
+		for (int i = 0; i < f.length; i++) {
+			System.out.println("i: " + i);
+			System.out.println("char: " + f[i]);
+			System.out.println("int val: " + Integer.valueOf((int) f[i]));
+		}
+		char[] c = { 2, 'C', 'a', 'r', 'e', ' ', 't', 'h', 'e', ' ', 't', 'h' };
+		assertEquals("TEST12: Simple Decrypt", new String(c), LanguageModel.simpleSolver(f, model)[0]);
+	}
+
+	/**
+	 * Testing the final more complex solver solution for retaining an amount of
+	 * best guesses and extending from there
+	 * 
+	 * @throws IOException Exception for the IO complexities
+	 */
+	@Test
+	public void testThirteen() throws IOException {
+		FileWriter fw = new FileWriter("./newfile.txt");
+		fw.append(new String(
+				createXOR(((char) 2 + "this is the test!").toCharArray(), ((char) 2 + "i am also to test").toCharArray())));
+		File f = new File("./newfile.txt");
+		fw.close();
+		int x = 3;
+		String[] output = LanguageModel.solver(f, model, x);
+		for(int i = 0; i < 3; i++) {
+			System.out.println("i: " + i);
+			System.out.println("A: " + output[i]);
+			System.out.println("B: " + output[i+3]);
+		}
+		String o = output[4].substring(3, 20);
+		assertEquals("TEST12: Simple Decrypt", "I the the to ys'!", o);
+		f.delete();
+			
+	}
+
+	/*
+	 * @Test public void test() { assertEquals("TEST:", 0, 0); }
+	 */
+
+	public static char[] createXOR(char[] a, char[] b) {
+		char[] output = new char[a.length];
+		for (int i = 0; i < a.length; i++) {
+			output[i] = (char) (a[i] ^ b[i]);
+		}
+		return output;
+	}
 }
