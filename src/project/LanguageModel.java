@@ -10,6 +10,7 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.Scanner;
 
 import com.aliasi.lm.NGramProcessLM;
 
@@ -26,51 +27,88 @@ public class LanguageModel {
 	 *            command line arguements fed to the program
 	 */
 	public static void main(String[] args) {
-		// TODO Change n declaration to command line arguement
-		int n = 3;
-		if (n < 3) {
-			if (n == 0) {
-				// TODO Properly implement load from file
-				loadFromFile(args[2]);
+		NGramProcessLM model = null;
+		boolean fail = false;
+		Scanner ui = new Scanner(System.in);
+		// Create Model
+		System.out.println("Use Exisiting Model? <Y/N>");
+		String s = ui.next();
+		int n = 0;
+		int i;
+		if (s.equals("Y") || s.equals("y")) {
+			System.out.println("Enter Filename: <string>");
+			s = "./resources/ciphertext/" + ui.next() + ".txt";
+			if (new File(s).exists()) {
+				model = loadFromFile(s);
+				n = model.maxNGram();
+			} else {
+				System.out.println("File Does Not Exist");
+				fail = true;
 			}
-			// TODO implement failsafe for impossible n
+		} else if (s.equals("N") || s.equals("n")) {
+			System.out.println("Creating New Model...");
+			System.out.println("Enter n value: <int>");
+			n = Integer.valueOf(ui.next());
+			model = createModel(n);
+			System.out.println("Use Smoothing? <Y/N>");
+			s = ui.next();
+			if (s.equals("Y") || s.equals("y")) {
+				System.out.println("Select Method: <1/2/3>\n1: Laplace \n2: Good-Turing \n3: Witten-Bell");
+				i = Integer.valueOf(ui.next());
+				if (i == 1) {
+					model = smoothingLaplace(model, n);
+				} else if (i == 2) {
+					// model = smoothingGoodTuring(model, n);
+				} else if (i == 3) {
+					// model = smoothingWittenBell(model, n);
+				} else {
+					System.out.println("Invalid Input");
+					fail = true;
+				}
+			} else if (s.equals("N") || s.equals("n")) {
+				
+			} else {
+				System.out.println("Invalid Input");
+				fail = true;
+			}
+
+		} else {
+			System.out.println("Invalid Input");
+			fail = true;
 		}
-
-		// Creates java lingpipe model form NGram Language Modelling
-		NGramProcessLM model = createModel(n);
-		NGramProcessLM model2 = createModel(n - 1);
-		NGramProcessLM smoothing;
-		NGramProcessLM smoothing2;
-
-		// Searches Directory for each file
-		final File file = new File("C:/Users/Andrew/workspace/TwoTimeNLM/resources/corpus/");
-		for (final File child : file.listFiles()) {
-			// Calls train method for each file
-			System.out.println(child.getName());
-			model = train(model, file.toString() + "/" + child.getName());
-			model2 = train(model2, file.toString() + "/" + child.getName());
+		// Execute Process
+		if (!fail) {
+			System.out.println("Simple or Complex Solver? <S/C>");
+			s = ui.next();
+			if (s.equals("C") || s.equals("c")) {
+				System.out.println("Enter Ciphertext Filename: <string>");
+				s = "./resources/ciphertext/" + ui.next() + ".txt";
+				if (new File(s).exists()) {
+					int x;
+					File f = new File(s);
+					System.out.println("Enter The Amount Of Results To Keep Each Pass: <int>");
+					x = Integer.valueOf(ui.next());
+					// TODO: DISPLAY OUTPUT
+					solver(f, model, x);
+				} else {
+					System.out.println("File Does Not Exist");
+					fail = true;
+				}
+			} else if (s.equals("S") || s.equals("s")) {
+				System.out.println("Enter Ciphertext Message: <string>");
+				s = ui.next();
+				// TODO: DISPLAY OUTPUT
+				simpleSolver(s.toCharArray(), model);
+			} else {
+				System.out.println("Invalid Input");
+				fail = true;
+			}
 		}
-
-		// Initialize models for smoothing
-		smoothing = model;
-		smoothing2 = model2;
-
-		// Laplace smoothing
-		smoothing = smoothingLaplace(smoothing, n);
-		smoothing = smoothingLaplace(smoothing2, (n - 1));
-
-		if (args[3].toString() == "save") {
-			// TODO Properly implement save
-			saveToFile("3gramModel", model);
-			saveToFile("2gramModel", model2);
-			saveToFile("3gramLaplace", smoothing);
-			saveToFile("2gramLaplace", smoothing2);
-		}
-
+		ui.close();
 	}
 
 	public static String[] solver(File message, NGramProcessLM model, int x) {
-		String[] output = new String[x*2];
+		String[] output = new String[x * 2];
 		int currentChar;
 		char c;
 		char[] cXOR;
@@ -85,7 +123,6 @@ public class LanguageModel {
 			// Read until file is closed
 			int loop = 0;
 			while ((currentChar = br.read()) != -1) {
-				System.out.println("LOOP: " + loop);
 				int index = 0;
 				// Create XOR Map for input character
 				c = (char) currentChar;
@@ -103,9 +140,7 @@ public class LanguageModel {
 				} else {
 					// Act for each item in the workqueue
 					for (int i = 0; i < workQueue.length; i++) {
-						System.out.println("i: " + i);
 						if (workQueue[i] == null) {
-							System.out.println("CONTINUE");
 							continue;
 						} else {
 							if (loop < model.maxNGram() - 1) {
@@ -115,7 +150,6 @@ public class LanguageModel {
 								AnalysisPair[] temp = new AnalysisPair[256];
 								// EXPAND
 								for (int j = 0; j < 256; j++) {
-									System.out.println("J1: " + j);
 									AnalysisPair aP = workQueue[i];
 									strA = aP.getNGram().toCharArray();
 									strB = aP.getNGram2().toCharArray();
@@ -123,9 +157,6 @@ public class LanguageModel {
 									char e = cXOR[j];
 									strA[loop] = d;
 									strB[loop] = e;
-									// May have to edit to make sure that
-									// probability checks that correct ngram
-									// i.e. only [0] - [loop]
 									double prob = tempModel.prob(new String(strA)) + tempModel.prob(new String(strB));
 									temp[j] = new AnalysisPair(new String(strA), new String(strB), prob, aP.getData1(),
 											aP.getData2());
@@ -136,7 +167,6 @@ public class LanguageModel {
 								// FILTER
 								for (int j = 0; j < x; j++) {
 									input[index] = temp[255 - j];
-									System.out.println("INDEX: " + index);
 									index++;
 								}
 							} else {
@@ -148,7 +178,6 @@ public class LanguageModel {
 								// EXPAND
 								AnalysisPair[] temp = new AnalysisPair[256];
 								for (int j = 0; j < 256; j++) {
-									System.out.println("J2: " + j);
 									char d = (char) j;
 									char e = cXOR[j];
 									strA[model.maxNGram() - 1] = d;
@@ -162,7 +191,6 @@ public class LanguageModel {
 								temp = quickSort(0, 255, temp);
 								// FILTER
 								for (int j = 0; j < x; j++) {
-									System.out.println("INDEX: " + index);
 									input[index] = temp[255 - j];
 									index++;
 								}
@@ -173,13 +201,11 @@ public class LanguageModel {
 				// SORT INPUT
 				workQueue = new AnalysisPair[x];
 				if (loop == 1) {
-					System.out.println("FLAG 1");
 					input = quickSort(0, x - 1, input);
 					for (int j = 0; j < x; j++) {
 						workQueue[j] = input[(x - 1) - j];
 					}
 				} else {
-					System.out.println("FLAG 2");
 					input = quickSort(0, x * x - 1, input);
 					// FILTER
 					for (int j = 0; j < x; j++) {
@@ -194,10 +220,10 @@ public class LanguageModel {
 			System.out.println(e.getMessage());
 			e.printStackTrace();
 		}
-		for(int i = 0 ; i < workQueue.length; i++) {
+		for (int i = 0; i < workQueue.length; i++) {
 			output[i] = workQueue[i].getData1();
 		}
-		for(int i = 0; i < workQueue.length; i++) {
+		for (int i = 0; i < workQueue.length; i++) {
 			output[i + workQueue.length] = workQueue[i].getData2();
 		}
 		return output;
@@ -237,7 +263,6 @@ public class LanguageModel {
 			// Create XOR map
 			cXOR = XORHandler(c);
 			// Code until ngram size is reached
-			System.out.println("int i: " + i + "\nchar c: " + c + "\nint c: " + Integer.valueOf((char) c));
 			if (i <= model.maxNGram() - 2) {
 				if (i == 0) {
 					// File Load: First read character is ASCII - 02
@@ -246,8 +271,6 @@ public class LanguageModel {
 					// Update output string
 					strSA += strA[i];
 					strSB += strB[i];
-					System.out.println("A: " + strSA);
-					System.out.println("B: " + strSB);
 
 				} else {
 					NGramProcessLM temp = createModel(i);
@@ -268,8 +291,6 @@ public class LanguageModel {
 					// Update output string
 					strSA += strA[i];
 					strSB += strB[i];
-					System.out.println("A: " + strSA);
-					System.out.println("B: " + strSB);
 				}
 			} else {
 				if (i != model.maxNGram() - 1) {
@@ -294,12 +315,8 @@ public class LanguageModel {
 				// Update output string
 				strSA += strA[model.maxNGram() - 1];
 				strSB += strB[model.maxNGram() - 1];
-				System.out.println("A: " + strSA);
-				System.out.println("B: " + strSB);
 			}
 		}
-		System.out.println("OUTPUT A: " + strSA);
-		System.out.println("OUTPUT B: " + strSB);
 
 		output[0] = strSA;
 		output[1] = strSB;
@@ -460,7 +477,6 @@ public class LanguageModel {
 			// For each line of the file train the model and output to console
 			for (String line; (line = br.readLine()) != null;) {
 				model.train(line);
-				// System.out.println(line);
 			}
 			br.close();
 			return model;
@@ -514,8 +530,6 @@ public class LanguageModel {
 		AnalysisPair[] output = new AnalysisPair[topX];
 		for (int i = 0; i < topX; i++) {
 			output[i] = new AnalysisPair(aP[i].getNGram(), aP[i].getProbability());
-			// OUTPUT: System.out.println("Rank " + (i + 1) + ": " +
-			// aP[i].toString());
 		}
 		// Return Sorted NGram information
 		return output;
