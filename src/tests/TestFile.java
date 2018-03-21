@@ -221,7 +221,25 @@ public class TestFile {
 	/*
 	 * @Test public void test() { assertEquals("TEST:", 0, 0); }
 	 */
+	
+	/**
+	 * TODO: JAVADOC
+	 * @param a
+	 * @param b
+	 * @throws IOException
+	 */
+	public void createXORFile(String a, String b) throws IOException {
+		FileWriter fw = new FileWriter("./newfile.txt");
+		fw.append(new String(createXOR(a.toCharArray(), b.toCharArray())));
+		fw.close();
+	}
 
+	/**
+	 * TODO: JAVADOC
+	 * @param a
+	 * @param b
+	 * @return
+	 */
 	public static char[] createXOR(char[] a, char[] b) {
 		char[] output = new char[a.length];
 		for (int i = 0; i < a.length; i++) {

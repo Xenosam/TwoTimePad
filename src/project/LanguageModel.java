@@ -35,10 +35,12 @@ public class LanguageModel {
 		String s = ui.next();
 		int n = 0;
 		int i;
+		// Choose Load or New Model
 		if (s.equals("Y") || s.equals("y")) {
 			System.out.println("Enter Filename: <string>");
-			s = "./resources/ciphertext/" + String.valueOf(ui.next()) + ".txt";
-			if (new File(s).exists()) {
+			s = String.valueOf(ui.next());
+			File f = new File("./resources/models/" + s + ".txt");
+			if (f.exists()) {
 				model = loadFromFile(s);
 				n = model.maxNGram();
 			} else {
@@ -50,6 +52,14 @@ public class LanguageModel {
 			System.out.println("Enter n value: <int>");
 			n = Integer.valueOf(ui.next());
 			model = createModel(n);
+			// Train the Model
+			final File file = new File("./resources/corpus/");
+			for (final File child : file.listFiles()) {
+				// Calls train method for each file
+				System.out.println("Training: " + child.getName());
+				model = train(model, file.toString() + "/" + child.getName());
+			}
+			// Choose Language Smoothing
 			System.out.println("Use Smoothing? <Y/N>");
 			s = ui.next();
 			if (s.equals("Y") || s.equals("y")) {
@@ -66,6 +76,7 @@ public class LanguageModel {
 					fail = true;
 				}
 			} else if (s.equals("N") || s.equals("n")) {
+				model.setLambdaFactor(0);
 				System.out.println("Continuing");
 			} else {
 				System.out.println("Invalid Input");
@@ -75,15 +86,7 @@ public class LanguageModel {
 			System.out.println("Invalid Input");
 			fail = true;
 		}
-		// TODO: TRAINING LOOP
-		if (!fail) {
-			final File file = new File("./resources/corpus/");
-			for (final File child : file.listFiles()) {
-				// Calls train method for each file
-				System.out.println("Training: " + child.getName());
-				model = train(model, file.toString() + "/" + child.getName());
-			}
-		}
+		// Ask to Save model (Potentially Irrelevant)
 		if (!fail) {
 			System.out.println("Save Model To Resources? <Y/N>");
 			s = ui.next();
@@ -597,6 +600,8 @@ public class LanguageModel {
 	 * @return The smoothed double
 	 */
 	public static NGramProcessLM smoothingLaplace(NGramProcessLM model, int n) {
+		// Remove Witten-Bell Smoothing
+		model.setLambdaFactor(0);
 		// Follows the same process as the AP model production
 		char[] cSeq = new char[n];
 		int temp;
@@ -633,6 +638,9 @@ public class LanguageModel {
 	 * @return
 	 */
 	public static NGramProcessLM smoothingGoodTuring(NGramProcessLM model, int n) {
+		// Remove Witten-Bell Smoothing
+		model.setLambdaFactor(0);
+				
 		double lambdaFactor = model.getLambdaFactor();
 		model.setLambdaFactor(lambdaFactor);
 		// TODO: FINISH METHOD
@@ -647,8 +655,11 @@ public class LanguageModel {
 	 * @return
 	 */
 	public static NGramProcessLM smoothingWittenBell(NGramProcessLM model, int n) {
-		// TODO: FINISH METHOD
-		return null;
+		/*
+		 * Java Linpipe Natively uses Witten-Bell Smoothing
+		 * lambda(c1,...,cn) = extCount(c1,...,cn) / (extCount(c1,...,cn) + L * numExtensions(c1,...,cn))
+		 */
+		return model;
 	}
 
 	/**
@@ -661,7 +672,8 @@ public class LanguageModel {
 	 */
 	public static void saveToFile(String filename, NGramProcessLM model) {
 		// Create File
-		File f = new File("C:/Users/Andrew/workspace/TwoTimeNLM/resources/models/" + filename + ".txt");
+		File f = new File("./resources/models/" + filename + ".txt");
+		System.out.println("SAVING: " + f.getAbsolutePath());
 		OutputStream out;
 		try {
 			// Establish Output Stream
@@ -688,7 +700,8 @@ public class LanguageModel {
 	public static NGramProcessLM loadFromFile(String filename) {
 		NGramProcessLM model = null;
 		// Create File
-		File f = new File("C:/Users/Andrew/workspace/TwoTimeNLM/resources/models/" + filename + ".txt");
+		File f = new File("./resources/models/" + filename + ".txt");
+		System.out.println("LOADING: " + f.getName());
 		try {
 			// Establish Input Stream
 			InputStream input;
