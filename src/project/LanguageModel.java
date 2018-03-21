@@ -37,7 +37,7 @@ public class LanguageModel {
 		int i;
 		if (s.equals("Y") || s.equals("y")) {
 			System.out.println("Enter Filename: <string>");
-			s = "./resources/ciphertext/" + ui.next() + ".txt";
+			s = "./resources/ciphertext/" + String.valueOf(ui.next()) + ".txt";
 			if (new File(s).exists()) {
 				model = loadFromFile(s);
 				n = model.maxNGram();
@@ -66,15 +66,52 @@ public class LanguageModel {
 					fail = true;
 				}
 			} else if (s.equals("N") || s.equals("n")) {
-				
+				System.out.println("Continuing");
 			} else {
 				System.out.println("Invalid Input");
 				fail = true;
 			}
-
 		} else {
 			System.out.println("Invalid Input");
 			fail = true;
+		}
+		// TODO: TRAINING LOOP
+		if (!fail) {
+			final File file = new File("./resources/corpus/");
+			for (final File child : file.listFiles()) {
+				// Calls train method for each file
+				System.out.println("Training: " + child.getName());
+				model = train(model, file.toString() + "/" + child.getName());
+			}
+		}
+		if (!fail) {
+			System.out.println("Save Model To Resources? <Y/N>");
+			s = ui.next();
+			if (s.equals("Y") || s.equals("y")) {
+				System.out.println("Enter Filename: <string>");
+				s = ui.next();
+				File f = new File("./resources/models/" + s + ".txt");
+				if (f.exists()) {
+					System.out.println("File Exists, Delete and Recreate? <Y/N>");
+					s = ui.next();
+					if (s.equals("Y") || s.equals("y")) {
+						f.delete();
+						saveToFile((s), model);
+					} else if (s.equals("N") || s.equals("n")) {
+						System.out.println("Continuing");
+					} else {
+						System.out.println("Invalid Input");
+						fail = true;
+					}
+				} else {
+					saveToFile((s), model);
+				}
+			} else if (s.equals("N") || s.equals("n")) {
+				System.out.println("Continuing");
+			} else {
+				System.out.println("Invalid Input");
+				fail = true;
+			}
 		}
 		// Execute Process
 		if (!fail) {
@@ -107,6 +144,14 @@ public class LanguageModel {
 		ui.close();
 	}
 
+	/**
+	 * TODO: JAVADOC
+	 * 
+	 * @param message
+	 * @param model
+	 * @param x
+	 * @return
+	 */
 	public static String[] solver(File message, NGramProcessLM model, int x) {
 		String[] output = new String[x * 2];
 		int currentChar;
@@ -229,6 +274,12 @@ public class LanguageModel {
 		return output;
 	}
 
+	/**
+	 * TODO: JAVADOC
+	 * 
+	 * @param strA
+	 * @return
+	 */
 	public static char[] stringTrim(char[] strA) {
 		for (int j = 1; j < strA.length; j++) {
 			// Remove least significant character
@@ -239,6 +290,7 @@ public class LanguageModel {
 	}
 
 	/**
+	 * TODO: JAVADOC
 	 * 
 	 * @param message
 	 * @param model
@@ -573,14 +625,32 @@ public class LanguageModel {
 		return model;
 	}
 
+	/**
+	 * TODO: JAVADOC
+	 * 
+	 * @param model
+	 * @param n
+	 * @return
+	 */
 	public static NGramProcessLM smoothingGoodTuring(NGramProcessLM model, int n) {
+		double lambdaFactor = model.getLambdaFactor();
+		model.setLambdaFactor(lambdaFactor);
+		// TODO: FINISH METHOD
 		return null;
 	}
-	
+
+	/**
+	 * TODO: JAVADOC
+	 * 
+	 * @param model
+	 * @param n
+	 * @return
+	 */
 	public static NGramProcessLM smoothingWittenBell(NGramProcessLM model, int n) {
+		// TODO: FINISH METHOD
 		return null;
 	}
-	
+
 	/**
 	 * This method is for saving an NGramProcessLM model to the disc
 	 * 
