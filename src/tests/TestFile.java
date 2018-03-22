@@ -28,8 +28,10 @@ public class TestFile {
 	public void setUp() throws Exception {
 		model = LanguageModel.train(LanguageModel.createModel(3),
 				"C:/Users/Andrew/workspace/TwoTimeNLM/resources/corpus/A Tale of Two Cities - Charles Dickens.txt");
+		// model.setLambdaFactor(0);
 		model4 = LanguageModel.train(LanguageModel.createModel(4),
 				"C:/Users/Andrew/workspace/TwoTimeNLM/resources/corpus/A Tale of Two Cities - Charles Dickens.txt");
+		// model4.setLambdaFactor(0);
 	}
 
 	/**
@@ -167,7 +169,7 @@ public class TestFile {
 			System.out.println("char: " + f[i]);
 			System.out.println("int val: " + Integer.valueOf((int) f[i]));
 		}
-		char[] c = { 2, 'C', 'a', 'r', 'e', ' ', 't', 'h', 'e', ' ', 't', 'h' };
+		char[] c = { 2, 'C', 'h', 'a', 'd', 'o', 'w', ' ', 'y', 'g', 's', 'e' };
 		assertEquals("TEST12: Simple Decrypt", new String(c), LanguageModel.simpleSolver(f, model)[0]);
 	}
 
@@ -182,7 +184,7 @@ public class TestFile {
 	public void testThirteen() throws IOException {
 		FileWriter fw = new FileWriter("./newfile.txt");
 		fw.append(new String(createXOR(((char) 2 + "this is the test!").toCharArray(),
-				((char) 2 + "i am also to test").toCharArray())));
+				((char) 2 + "I am also to test").toCharArray())));
 		File f = new File("./newfile.txt");
 		fw.close();
 		int x = 3;
@@ -192,8 +194,8 @@ public class TestFile {
 			System.out.println("A: " + output[i]);
 			System.out.println("B: " + output[i + 3]);
 		}
-		String o = output[4].substring(3, 20);
-		assertEquals("TEST12: Simple Decrypt", "I the the to ys'!", o);
+		String o = output[2].substring(3, 20);
+		assertEquals("TEST12: Simple Decrypt", "T as also to you ", o);
 		f.delete();
 
 	}
@@ -221,9 +223,10 @@ public class TestFile {
 	/*
 	 * @Test public void test() { assertEquals("TEST:", 0, 0); }
 	 */
-	
+
 	/**
 	 * TODO: JAVADOC
+	 * 
 	 * @param a
 	 * @param b
 	 * @throws IOException
@@ -236,6 +239,7 @@ public class TestFile {
 
 	/**
 	 * TODO: JAVADOC
+	 * 
 	 * @param a
 	 * @param b
 	 * @return

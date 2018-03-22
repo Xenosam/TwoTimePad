@@ -7,6 +7,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -29,10 +30,35 @@ public class LanguageModel {
 	public static void main(String[] args) {
 		NGramProcessLM model = null;
 		boolean fail = false;
+		String s = "";
 		Scanner ui = new Scanner(System.in);
+		// Create new ciphertext
+		System.out.println("Create new Ciphertext? <Y/N>");
+		s = ui.next();
+		if (s.equals("Y") || s.equals("y")) {
+			String a, b;
+			System.out.println("Enter String 1: <string>");
+			ui.nextLine();
+			a = ui.nextLine();
+			System.out.println("Enter String 2: <string>");
+			b = ui.nextLine();
+			System.out.println("Enter Filename: <string>");
+			s = ui.nextLine();
+			try {
+				fail = createCiphertext(a.toCharArray(), b.toCharArray(), s);
+			} catch (IOException e) {
+				System.out.println(e.getMessage());
+				e.printStackTrace();
+			}
+		} else if (s.equals("N") || s.equals("n")) {
+			System.out.println("continue");
+		} else {
+			System.out.println("Invalid Input");
+			fail = true;
+		}
 		// Create Model
 		System.out.println("Use Exisiting Model? <Y/N>");
-		String s = ui.next();
+		s = ui.next();
 		int n = 0;
 		int i;
 		// Choose Load or New Model
@@ -129,7 +155,12 @@ public class LanguageModel {
 					System.out.println("Enter The Amount Of Results To Keep Each Pass: <int>");
 					x = Integer.valueOf(ui.next());
 					// TODO: DISPLAY OUTPUT
-					solver(f, model, x);
+					String[] output = solver(f, model, x);
+					for (int j = 0; j < (output.length/2); j++) {
+						System.out.println("i: " + j);
+						System.out.println("A: " + output[j]);
+						System.out.println("B: " + output[j + (output.length/2)]);
+					}
 				} else {
 					System.out.println("File Does Not Exist");
 					fail = true;
@@ -145,6 +176,28 @@ public class LanguageModel {
 			}
 		}
 		ui.close();
+	}
+
+	/**
+	 * TODO: JAVADOC
+	 * 
+	 * @param a
+	 * @param b
+	 * @throws IOException
+	 */
+	public static boolean createCiphertext(char[] a, char[] b, String filename) throws IOException {
+		if (a.length != b.length) {
+			System.out.println("Strings must be the same length");
+			System.out.println(new String(a) + "\nLength: " + a.length);
+			System.out.println(new String(b) + "\nLength: " + b.length);
+			return true;
+		}
+		FileWriter fw = new FileWriter("./resources/ciphertext/" + filename + ".txt");
+		for (int i = 0; i < a.length; i++) {
+			fw.append((char) ((int) a[i] ^ (int) b[i]));
+		}
+		fw.close();
+		return false;
 	}
 
 	/**
@@ -181,7 +234,7 @@ public class LanguageModel {
 					strB[0] = 2;
 					String s = new String(strA);
 					String t = new String(strB);
-					workQueue[0] = new AnalysisPair(s, t, model.prob(s) + model.prob(t), s, t);
+					workQueue[0] = new AnalysisPair(s, t, Math.log(model.prob(s) * model.prob(t)), s, t);
 					b = true;
 					loop++;
 					continue;
@@ -205,7 +258,7 @@ public class LanguageModel {
 									char e = cXOR[j];
 									strA[loop] = d;
 									strB[loop] = e;
-									double prob = tempModel.prob(new String(strA)) + tempModel.prob(new String(strB));
+									double prob = Math.log(tempModel.prob(new String(strA)) * tempModel.prob(new String(strB)));
 									temp[j] = new AnalysisPair(new String(strA), new String(strB), prob, aP.getData1(),
 											aP.getData2());
 									temp[j].addData(d, e);
@@ -230,7 +283,7 @@ public class LanguageModel {
 									char e = cXOR[j];
 									strA[model.maxNGram() - 1] = d;
 									strB[model.maxNGram() - 1] = e;
-									double prob = model.prob(new String(strA)) + model.prob(new String(strB));
+									double prob = Math.log(model.prob(new String(strA)) * model.prob(new String(strB)));
 									temp[j] = new AnalysisPair(new String(strA), new String(strB), prob,
 											workQueue[i].getData1(), workQueue[i].getData2());
 									temp[j].addData(d, e);
@@ -334,7 +387,7 @@ public class LanguageModel {
 						strA[i] = (char) k;
 						strB[i] = cXOR[k];
 						String s = (new String(strA.toString()) + new String(strB));
-						double p = temp.prob(new String(strA)) + temp.prob(new String(strB));
+						double p = Math.log(temp.prob(new String(strA)) * temp.prob(new String(strB)));
 						score[k] = new AnalysisPair(s, p);
 					}
 					// SORT
@@ -358,7 +411,7 @@ public class LanguageModel {
 					strB[model.maxNGram() - 1] = cXOR[j];
 					// SCORE Strings: score[i] -> aPA[i] + aPB[i]
 					String s = new String(strA) + new String(strB);
-					double p = (model.prob(new String(strA)) + model.prob(new String(strB)));
+					double p = Math.log(model.prob(new String(strA)) * model.prob(new String(strB)));
 					score[j] = new AnalysisPair(s, p);
 				}
 				// SORT
@@ -640,7 +693,7 @@ public class LanguageModel {
 	public static NGramProcessLM smoothingGoodTuring(NGramProcessLM model, int n) {
 		// Remove Witten-Bell Smoothing
 		model.setLambdaFactor(0);
-				
+
 		double lambdaFactor = model.getLambdaFactor();
 		model.setLambdaFactor(lambdaFactor);
 		// TODO: FINISH METHOD
@@ -656,8 +709,9 @@ public class LanguageModel {
 	 */
 	public static NGramProcessLM smoothingWittenBell(NGramProcessLM model, int n) {
 		/*
-		 * Java Linpipe Natively uses Witten-Bell Smoothing
-		 * lambda(c1,...,cn) = extCount(c1,...,cn) / (extCount(c1,...,cn) + L * numExtensions(c1,...,cn))
+		 * Java Linpipe Natively uses Witten-Bell Smoothing lambda(c1,...,cn) =
+		 * extCount(c1,...,cn) / (extCount(c1,...,cn) + L *
+		 * numExtensions(c1,...,cn))
 		 */
 		return model;
 	}
