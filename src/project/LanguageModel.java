@@ -526,6 +526,17 @@ public class LanguageModel {
 	}
 
 	/**
+	 * TODO: JAVADOC
+	 * 
+	 * @param tcsc
+	 * @param n
+	 * @return
+	 */
+	public static AnalysisPair[] createTCSCAPModel(TrieCharSeqCounter tcsc, int n) {
+		return null;
+	}
+
+	/**
 	 * Creates a model using the AnalysisPair class based off of a preexistant
 	 * NGramProcessLM model
 	 * 
@@ -621,18 +632,21 @@ public class LanguageModel {
 				if (loop < n - 1) {
 					// Fill ngram until almost full
 					ngram[loop] = currentchar;
-					//System.out.println("[" + loop + "]-NGRAM: " + new String(ngram));
+					// System.out.println("[" + loop + "]-NGRAM: " + new
+					// String(ngram));
 				} else if (loop == n - 1) {
 					// Fill final spot (No Trim) then count
 					ngram[loop] = currentchar;
 					tcsc.incrementSubstrings(new String(ngram));
-					//System.out.println("[" + loop + "]-NGRAM: " + new String(ngram));
+					// System.out.println("[" + loop + "]-NGRAM: " + new
+					// String(ngram));
 				} else {
 					// Trim then Fill then count
 					stringTrim(ngram);
-					ngram[n-1] = currentchar;
+					ngram[n - 1] = currentchar;
 					tcsc.incrementSubstrings(new String(ngram));
-					//System.out.println("[" + loop + "]-NGRAM: " + new String(ngram));
+					// System.out.println("[" + loop + "]-NGRAM: " + new
+					// String(ngram));
 				}
 				// Count Loops
 				loop++;
@@ -819,5 +833,61 @@ public class LanguageModel {
 			e.printStackTrace();
 		}
 		return model;
+	}
+
+	/**
+	 * This method is for saving a TrieCharSeqCounter object to the disc
+	 * 
+	 * @param filename
+	 *            The name of the file to be created
+	 * @param model
+	 *            The counter being exported
+	 */
+	public static void saveCounter(TrieCharSeqCounter tcsc, String filename) {
+		// Create File
+		File f = new File("./resources/counters/" + filename + ".txt");
+		System.out.println("SAVING: " + f.getAbsolutePath());
+		OutputStream out;
+		try {
+			// Establish Output Stream
+			out = new FileOutputStream(f);
+			tcsc.writeTo(out);
+			BufferedOutputStream bOutput = new BufferedOutputStream(out);
+			// Dump model to Output Stream
+			tcsc.writeTo(bOutput);
+			// Close Stream
+			bOutput.close();
+		} catch (IOException e) {
+			System.out.println(e.getMessage());
+			e.printStackTrace();
+		}
+	}
+
+	/**
+	 * Method for loading an TrieCharSeqCounter object from the disc
+	 * 
+	 * @param filename
+	 *            The file to be loaded
+	 * @return The counter containing the data from the loaded file
+	 */
+	public static TrieCharSeqCounter loadCounter(String filename) {
+		TrieCharSeqCounter tcsc = null;
+		// Create File
+		File f = new File("./resources/counters/" + filename + ".txt");
+		System.out.println("LOADING: " + f.getName());
+		try {
+			// Establish Input Stream
+			InputStream input;
+			input = new FileInputStream(f);
+			BufferedInputStream bInput = new BufferedInputStream(input);
+			// Read model from Input Stream
+			tcsc = TrieCharSeqCounter.readFrom(bInput);
+			// Close Stream
+			bInput.close();
+		} catch (IOException e) {
+			System.out.println(e.getMessage());
+			e.printStackTrace();
+		}
+		return tcsc;
 	}
 }

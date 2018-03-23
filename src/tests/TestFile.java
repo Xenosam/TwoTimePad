@@ -80,8 +80,11 @@ public class TestFile {
 	public void testFive() {
 		LanguageModel.saveToFile("testfile", model);
 		NGramProcessLM model2 = LanguageModel.loadFromFile("testfile");
-		assertEquals("TEST5: Saving/Loading Model to/from File", (int) (model2.prob("and") * 1000),
-				(int) (model.prob("and") * 1000));
+		int i = (int) model2.prob("and") * 1000;
+		int j = (int) model.prob("and") * 1000;
+		File f = new File("./resources/models/testfile.txt");
+		f.delete();
+		assertEquals("TEST5: Saving/Loading Model to/from File", i, j);
 	}
 
 	/**
@@ -233,6 +236,21 @@ public class TestFile {
 		System.out.println("TOP 10 NGRAMS:");
 		System.out.println(tcsc.topNGrams(3, 10));
 		assertEquals("TEST16: Fixing Smoothing", 7261884, tcsc.totalSequenceCount());
+	}
+
+	/**
+	 * TrieCharSeqCounter Load/Save
+	 */
+	@Test
+	public void testSeventeen() {
+		TrieCharSeqCounter tcsc = new TrieCharSeqCounter(3);
+		tcsc = LanguageModel.trainTCSC(tcsc, 3, "./resources/corpus/A Tale of Two Cities - Charles Dickens.txt");
+		LanguageModel.saveCounter(tcsc, "testcounter");
+		TrieCharSeqCounter temp = LanguageModel.loadCounter("testcounter");
+		boolean flag = (temp.totalSequenceCount() == tcsc.totalSequenceCount());
+		File f = new File("./resources/counters/testcounter.txt");
+		f.delete();
+		assertEquals("TEST17: Test Save/Load", true, flag);
 	}
 
 	/*
