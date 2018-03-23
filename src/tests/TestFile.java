@@ -10,6 +10,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import com.aliasi.lm.NGramProcessLM;
+import com.aliasi.lm.TrieCharSeqCounter;
 
 import project.AnalysisPair;
 import project.LanguageModel;
@@ -27,10 +28,10 @@ public class TestFile {
 	@Before
 	public void setUp() throws Exception {
 		model = LanguageModel.train(LanguageModel.createModel(3),
-				"C:/Users/Andrew/workspace/TwoTimeNLM/resources/corpus/A Tale of Two Cities - Charles Dickens.txt");
+				"./resources/corpus/A Tale of Two Cities - Charles Dickens.txt");
 		// model.setLambdaFactor(0);
 		model4 = LanguageModel.train(LanguageModel.createModel(4),
-				"C:/Users/Andrew/workspace/TwoTimeNLM/resources/corpus/A Tale of Two Cities - Charles Dickens.txt");
+				"./resources/corpus/A Tale of Two Cities - Charles Dickens.txt");
 		// model4.setLambdaFactor(0);
 	}
 
@@ -119,6 +120,7 @@ public class TestFile {
 	 */
 	// @Test
 	public void testEight() {
+		// Currently does not accurately smooth
 		NGramProcessLM lm = LanguageModel.createModel(3);
 		laplace = LanguageModel.smoothingLaplace(model, model.maxNGram());
 		assertEquals("TEST8: Laplace Smoothing", true, laplace.prob("g,!") > lm.prob("g,!"));
@@ -182,6 +184,7 @@ public class TestFile {
 	 */
 	@Test
 	public void testThirteen() throws IOException {
+		System.out.println("LAMBDA: " + model.getLambdaFactor());
 		FileWriter fw = new FileWriter("./newfile.txt");
 		fw.append(new String(createXOR(((char) 2 + "this is the test!").toCharArray(),
 				((char) 2 + "I am also to test").toCharArray())));
@@ -218,6 +221,24 @@ public class TestFile {
 		NGramProcessLM lm = LanguageModel.createModel(3);
 		wb = LanguageModel.smoothingWittenBell(model, model.maxNGram());
 		assertEquals("TEST8: Witten Bell Smoothing", true, wb.prob("g,!") > lm.prob("g,!"));
+	}
+
+	/**
+	 * TrieCharSeqCounter for smoothing
+	 */
+	@Test
+	public void testSixteen() {
+		TrieCharSeqCounter tcsc = new TrieCharSeqCounter(3);
+		char[] a = {'t','h','e'};
+		char[] b = {'t','h','e'};
+		char[] c = {'a','n','d'};
+		tcsc.incrementSubstrings(new String(a));
+		tcsc.incrementSubstrings(new String(b));
+		tcsc.incrementSubstrings(new String(c));
+		System.out.println("A: " + tcsc.count(new String(a)));
+		System.out.println("B: " + tcsc.count(new String(b)));
+		System.out.println("C: " + tcsc.count(new String(c)));
+		assertEquals("TEST16: Fixing Smoothing", true, 0 < tcsc.count(new String(a)));
 	}
 
 	/*

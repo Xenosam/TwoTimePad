@@ -30,6 +30,7 @@ public class LanguageModel {
 	public static void main(String[] args) {
 		NGramProcessLM model = null;
 		boolean fail = false;
+		boolean newItem = false;
 		String s = "";
 		Scanner ui = new Scanner(System.in);
 		// Create new ciphertext
@@ -74,6 +75,7 @@ public class LanguageModel {
 				fail = true;
 			}
 		} else if (s.equals("N") || s.equals("n")) {
+			newItem = true;
 			System.out.println("Creating New Model...");
 			System.out.println("Enter n value: <int>");
 			n = Integer.valueOf(ui.next());
@@ -113,7 +115,7 @@ public class LanguageModel {
 			fail = true;
 		}
 		// Ask to Save model (Potentially Irrelevant)
-		if (!fail) {
+		if (!fail & !newItem) {
 			System.out.println("Save Model To Resources? <Y/N>");
 			s = ui.next();
 			if (s.equals("Y") || s.equals("y")) {
@@ -156,10 +158,10 @@ public class LanguageModel {
 					x = Integer.valueOf(ui.next());
 					// TODO: DISPLAY OUTPUT
 					String[] output = solver(f, model, x);
-					for (int j = 0; j < (output.length/2); j++) {
+					for (int j = 0; j < (output.length / 2); j++) {
 						System.out.println("i: " + j);
 						System.out.println("A: " + output[j]);
-						System.out.println("B: " + output[j + (output.length/2)]);
+						System.out.println("B: " + output[j + (output.length / 2)]);
 					}
 				} else {
 					System.out.println("File Does Not Exist");
@@ -258,7 +260,8 @@ public class LanguageModel {
 									char e = cXOR[j];
 									strA[loop] = d;
 									strB[loop] = e;
-									double prob = Math.log(tempModel.prob(new String(strA)) * tempModel.prob(new String(strB)));
+									double prob = Math
+											.log(tempModel.prob(new String(strA)) * tempModel.prob(new String(strB)));
 									temp[j] = new AnalysisPair(new String(strA), new String(strB), prob, aP.getData1(),
 											aP.getData2());
 									temp[j].addData(d, e);
@@ -594,7 +597,7 @@ public class LanguageModel {
 		}
 		return null;
 	}
-
+	
 	/**
 	 * Method for returning the topX most likely NGrams for a given N-1Gram for
 	 * a given model. Currently the model looks at letters between 32 and 126
@@ -692,8 +695,6 @@ public class LanguageModel {
 	 */
 	public static NGramProcessLM smoothingGoodTuring(NGramProcessLM model, int n) {
 		// Remove Witten-Bell Smoothing
-		model.setLambdaFactor(0);
-
 		double lambdaFactor = model.getLambdaFactor();
 		model.setLambdaFactor(lambdaFactor);
 		// TODO: FINISH METHOD
