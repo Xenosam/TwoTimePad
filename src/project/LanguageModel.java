@@ -157,7 +157,6 @@ public class LanguageModel {
 					File f = new File(s);
 					System.out.println("Enter The Amount Of Results To Keep Each Pass: <int>");
 					x = Integer.valueOf(ui.next());
-					// TODO: DISPLAY OUTPUT
 					String[] output = solver(f, model, x);
 					for (int j = 0; j < (output.length / 2); j++) {
 						System.out.println("i: " + j);
@@ -171,8 +170,8 @@ public class LanguageModel {
 			} else if (s.equals("S") || s.equals("s")) {
 				System.out.println("Enter Ciphertext Message: <string>");
 				s = ui.next();
-				// TODO: DISPLAY OUTPUT
-				simpleSolver(s.toCharArray(), model);
+				String[] output = simpleSolver(s.toCharArray(), model);
+				System.out.println("A: " + output[0] + "\nB: " + output[1]);
 			} else {
 				System.out.println("Invalid Input");
 				fail = true;
@@ -182,11 +181,14 @@ public class LanguageModel {
 	}
 
 	/**
-	 * TODO: JAVADOC
+	 * Method for turning to character arrays into an XOR'd ciphertext
 	 * 
 	 * @param a
+	 *            String for our "Plaintext a"
 	 * @param b
+	 *            String for our "Plaintext b"
 	 * @throws IOException
+	 *             Error for File IO
 	 */
 	public static boolean createCiphertext(char[] a, char[] b, String filename) throws IOException {
 		if (a.length != b.length) {
@@ -204,11 +206,16 @@ public class LanguageModel {
 	}
 
 	/**
-	 * TODO: JAVADOC
+	 * The complex solver method for using a given NGramProcessLM model to
+	 * assess the shortest path through the hidden markov model in the
+	 * ciphertext
 	 * 
 	 * @param message
+	 *            the file containing the ciphertext
 	 * @param model
+	 *            the model to use for the ngram probabilities
 	 * @param x
+	 *            the amount of results to keep and extend each cycle
 	 * @return
 	 */
 	public static String[] solver(File message, NGramProcessLM model, int x) {
@@ -335,10 +342,12 @@ public class LanguageModel {
 	}
 
 	/**
-	 * TODO: JAVADOC
+	 * Moves each character back an index, dropping the character that was at
+	 * index 0 and clears the character at index length -1
 	 * 
 	 * @param strA
-	 * @return
+	 *            the string to be trimmed
+	 * @return the trimmed string
 	 */
 	public static char[] stringTrim(char[] strA) {
 		for (int j = 1; j < strA.length; j++) {
@@ -350,10 +359,14 @@ public class LanguageModel {
 	}
 
 	/**
-	 * TODO: JAVADOC
+	 * Solution to the problem that assumes the simplest state in that the
+	 * ciphertext is very short and that our value for the amount of items kept
+	 * each cycle is 1
 	 * 
 	 * @param message
+	 *            ciphertext string
 	 * @param model
+	 *            model for ngram probabilities
 	 */
 	public static String[] simpleSolver(char[] message, NGramProcessLM model) {
 		// Strings for current NGram
@@ -533,6 +546,7 @@ public class LanguageModel {
 	 * @return
 	 */
 	public static AnalysisPair[] createTCSCAPModel(TrieCharSeqCounter tcsc, int n) {
+		// TODO Finish Method
 		return null;
 	}
 
@@ -611,12 +625,16 @@ public class LanguageModel {
 	}
 
 	/**
-	 * TODO: JAVADOC
+	 * Method for training a TrieCharSeqCounter for the counts of ngrams
+	 * appearing in our model for the given value of n
 	 * 
 	 * @param tcsc
+	 *            the TrieCharSeqCounter object we're training
 	 * @param n
+	 *            the size of the ngram
 	 * @param filename
-	 * @return
+	 *            the file we are training from
+	 * @return the trained TrieCharSeqCounter object
 	 */
 	public static TrieCharSeqCounter trainTCSC(TrieCharSeqCounter tcsc, int n, String filename) {
 		File f = new File(filename);
