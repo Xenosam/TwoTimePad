@@ -229,16 +229,10 @@ public class TestFile {
 	@Test
 	public void testSixteen() {
 		TrieCharSeqCounter tcsc = new TrieCharSeqCounter(3);
-		char[] a = {'t','h','e'};
-		char[] b = {'t','h','e'};
-		char[] c = {'a','n','d'};
-		tcsc.incrementSubstrings(new String(a));
-		tcsc.incrementSubstrings(new String(b));
-		tcsc.incrementSubstrings(new String(c));
-		System.out.println("A: " + tcsc.count(new String(a)));
-		System.out.println("B: " + tcsc.count(new String(b)));
-		System.out.println("C: " + tcsc.count(new String(c)));
-		assertEquals("TEST16: Fixing Smoothing", true, 0 < tcsc.count(new String(a)));
+		tcsc = LanguageModel.trainTCSC(tcsc, 3, "./resources/corpus/A Tale of Two Cities - Charles Dickens.txt");
+		System.out.println("TOP 10 NGRAMS:");
+		System.out.println(tcsc.topNGrams(3, 10));
+		assertEquals("TEST16: Fixing Smoothing", 7261884, tcsc.totalSequenceCount());
 	}
 
 	/*

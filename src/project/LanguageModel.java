@@ -14,6 +14,7 @@ import java.io.OutputStream;
 import java.util.Scanner;
 
 import com.aliasi.lm.NGramProcessLM;
+import com.aliasi.lm.TrieCharSeqCounter;
 
 /**
  * @author Andrew
@@ -597,7 +598,54 @@ public class LanguageModel {
 		}
 		return null;
 	}
-	
+
+	/**
+	 * TODO: JAVADOC
+	 * 
+	 * @param tcsc
+	 * @param n
+	 * @param filename
+	 * @return
+	 */
+	public static TrieCharSeqCounter trainTCSC(TrieCharSeqCounter tcsc, int n, String filename) {
+		File f = new File(filename);
+		int loop = 0;
+		int c;
+		char currentchar;
+		char[] ngram = new char[n];
+		try {
+			BufferedReader br = new BufferedReader(new FileReader(f));
+			// Read file character by character
+			while ((c = br.read()) != -1) {
+				currentchar = (char) c;
+				if (loop < n - 1) {
+					// Fill ngram until almost full
+					ngram[loop] = currentchar;
+					//System.out.println("[" + loop + "]-NGRAM: " + new String(ngram));
+				} else if (loop == n - 1) {
+					// Fill final spot (No Trim) then count
+					ngram[loop] = currentchar;
+					tcsc.incrementSubstrings(new String(ngram));
+					//System.out.println("[" + loop + "]-NGRAM: " + new String(ngram));
+				} else {
+					// Trim then Fill then count
+					stringTrim(ngram);
+					ngram[n-1] = currentchar;
+					tcsc.incrementSubstrings(new String(ngram));
+					//System.out.println("[" + loop + "]-NGRAM: " + new String(ngram));
+				}
+				// Count Loops
+				loop++;
+			}
+			br.close();
+		} catch (IOException e) {
+			System.out.println(e.getMessage());
+			e.printStackTrace();
+		}
+		// Return
+		return tcsc;
+	}
+
 	/**
 	 * Method for returning the topX most likely NGrams for a given N-1Gram for
 	 * a given model. Currently the model looks at letters between 32 and 126
