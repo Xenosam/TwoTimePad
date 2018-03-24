@@ -125,11 +125,11 @@ public class TestFile {
 	public void testEight() {
 		int n = 3;
 		String s = "g,!";
-		TrieCharSeqCounter laplace = new TrieCharSeqCounter(n);
-		laplace = LanguageModel.trainTCSC(laplace, n, "./resources/corpus/A Tale of Two Cities - Charles Dickens.txt");
 		TrieCharSeqCounter lm = new TrieCharSeqCounter(n);
-		lm = LanguageModel.smoothingLaplace(lm, n);
 		lm = LanguageModel.trainTCSC(lm, n, "./resources/corpus/A Tale of Two Cities - Charles Dickens.txt");
+		TrieCharSeqCounter laplace = new TrieCharSeqCounter(n);
+		laplace = LanguageModel.smoothingLaplace(laplace, n);
+		laplace = LanguageModel.trainTCSC(laplace, n, "./resources/corpus/A Tale of Two Cities - Charles Dickens.txt");
 		System.out.println("LAPLACE: " + laplace.count(s) + ", BASE: " + lm.count(s));
 		assertEquals("TEST8: Laplace Smoothing", true, laplace.count(s) > lm.count(s));
 	}
@@ -215,10 +215,14 @@ public class TestFile {
 	 */
 	@Test
 	public void testFourteen() {
-		TrieCharSeqCounter lm = null;
-		lm = LanguageModel.trainTCSC(lm, 3, "./resources/corpus/A Tale of Two Cities - Charles Dickens.txt");
-		TrieCharSeqCounter gt = LanguageModel.smoothingGoodTuring(lm, 3);
+		int n = 3;
 		String s = "g,!";
+		TrieCharSeqCounter lm = new TrieCharSeqCounter(n);
+		lm = LanguageModel.trainTCSC(lm, n, "./resources/corpus/A Tale of Two Cities - Charles Dickens.txt");
+		TrieCharSeqCounter gt = new TrieCharSeqCounter(n);
+		gt = LanguageModel.smoothingGoodTuring(gt, n);
+		gt = LanguageModel.trainTCSC(gt, n, "./resources/corpus/A Tale of Two Cities - Charles Dickens.txt");
+		System.out.println("GT: " + gt.count(s) + ", BASE: " + lm.count(s));
 		assertEquals("TEST14: Good Turing Smoothing", true, gt.count(s) > lm.count(s));
 	}
 
