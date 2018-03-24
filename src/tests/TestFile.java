@@ -198,16 +198,15 @@ public class TestFile {
 		File f = new File("./newfile.txt");
 		fw.close();
 		int x = 3;
-		String[] output = LanguageModel.solver(f, model, x);
+		String[] output = LanguageModel.solver(f, model, x, false);
 		for (int i = 0; i < 3; i++) {
 			System.out.println("i: " + i);
 			System.out.println("A: " + output[i]);
 			System.out.println("B: " + output[i + 3]);
 		}
 		String o = output[0].substring(3, 20);
-		assertEquals("TEST12: Simple Decrypt", "t as also to you ", o);
+		assertEquals("TEST13: Complex Decrypt", "t as also to you ", o);
 		f.delete();
-
 	}
 
 	/**
@@ -231,10 +230,14 @@ public class TestFile {
 	 */
 	@Test
 	public void testFifteen() {
-		TrieCharSeqCounter lm = null;
-		lm = LanguageModel.trainTCSC(lm, 3, "./resources/corpus/A Tale of Two Cities - Charles Dickens.txt");
-		TrieCharSeqCounter wb = LanguageModel.smoothingWittenBell(lm, 3);
+		int n = 3;
 		String s = "g,!";
+		TrieCharSeqCounter lm = new TrieCharSeqCounter(n);
+		lm = LanguageModel.trainTCSC(lm, n, "./resources/corpus/A Tale of Two Cities - Charles Dickens.txt");
+		TrieCharSeqCounter wb = new TrieCharSeqCounter(n);
+		wb = LanguageModel.smoothingLaplace(wb, n);
+		wb = LanguageModel.trainTCSC(wb, n, "./resources/corpus/A Tale of Two Cities - Charles Dickens.txt");
+		System.out.println("WB: " + wb.count(s) + ", BASE: " + lm.count(s));
 		assertEquals("TEST15: Witten Bell Smoothing", true, wb.count(s) > lm.count(s));
 	}
 
@@ -263,6 +266,31 @@ public class TestFile {
 		File f = new File("./resources/counters/testcounter.txt");
 		f.delete();
 		assertEquals("TEST17: Test Save/Load", true, flag);
+	}
+
+	/**
+	 * @throws IOException
+	 * 
+	 */
+	@Test
+	public void testEighteen() throws IOException {
+		int n = 3;
+		int x = 3;
+		FileWriter fw = new FileWriter("./resources/ciphertext/newfile.txt");
+		TrieCharSeqCounter tcsc = new TrieCharSeqCounter(n);
+		tcsc = LanguageModel.trainTCSC(tcsc, n, "./resources/corpus/A Tale of Two Cities - Charles Dickens.txt");
+		fw.append(new String(createXOR(("this is the test!").toCharArray(), ("I am also to test").toCharArray())));
+		File f = new File("./resources/ciphertext/newfile.txt");
+		fw.close();
+		String[] output = LanguageModel.TCSCSolver(f, tcsc, n, x, false);
+		f.delete();
+		for (int i = 0; i < 3; i++) {
+			System.out.println("i: " + i);
+			System.out.println("A: " + output[i]);
+			System.out.println("B: " + output[i + 3]);
+		}
+		String o = output[0].substring(3, 20);
+		assertEquals("TEST18: TCSC Decrypt", "t as also to you ", o);
 	}
 
 	/*
