@@ -249,7 +249,7 @@ public class LanguageModel {
 						double bp = tempCounter.count("" + b);
 						System.out.println("A: " + a + ", P: " + ap);
 						System.out.println("B: " + b + ", P: " + bp);
-						temp[i] = new AnalysisPair("" + a, "" + b, ap + bp);
+						temp[i] = new AnalysisPair("" + a, "" + b, ap + bp, "" + a, "" + b);
 					}
 					// Sort
 					temp = quickSort(0, 255, temp);
@@ -270,37 +270,36 @@ public class LanguageModel {
 						if (aP == null) {
 							// Skip if null
 							continue;
-						} else {
-							// Train
-							TrieCharSeqCounter tempCounter = new TrieCharSeqCounter(loop + 1);
-							tempCounter = LanguageModel.trainTCSC(tempCounter, loop + 1,
-									"./resources/corpus/A Tale of Two Cities - Charles Dickens.txt");
-							AnalysisPair[] temp = new AnalysisPair[256];
-							// Extend
-							for (int i = 0; i < 256; i++) {
-								char a = (char) i;
-								char b = cXOR[i];
-								String s = aP.getNGram() + a;
-								String t = aP.getNGram2() + b;
-								double ap = tempCounter.count(s);
-								double bp = tempCounter.count(t);
-								System.out.println("A: " + s + ", P: " + ap);
-								System.out.println("B: " + t + ", P: " + bp);
-								temp[i] = new AnalysisPair(s, t, ap + bp);
-							}
-							// Sort
-							temp = quickSort(0, 255, temp);
-							// Filter
-							for (int i = 0; i < x; i++) {
-								AnalysisPair curr = temp[255 - i];
-								System.out.println("A: " + curr.getNGram());
-								System.out.println("B: " + curr.getNGram2());
-								input[index] = new AnalysisPair(curr.getNGram(), curr.getNGram2(),
-										curr.getProbability());
-								input[index].addData(curr.getNGram().charAt(0), curr.getNGram2().charAt(0));
-								index++;
-							}
 						}
+						// Train
+						TrieCharSeqCounter tempCounter = new TrieCharSeqCounter(loop + 1);
+						tempCounter = LanguageModel.trainTCSC(tempCounter, loop + 1,
+								"./resources/corpus/A Tale of Two Cities - Charles Dickens.txt");
+						AnalysisPair[] temp = new AnalysisPair[256];
+						// Extend
+						for (int i = 0; i < 256; i++) {
+							char a = (char) i;
+							char b = cXOR[i];
+							String s = aP.getNGram() + a;
+							String t = aP.getNGram2() + b;
+							double ap = tempCounter.count(s);
+							double bp = tempCounter.count(t);
+							System.out.println("A: " + s + ", P: " + ap);
+							System.out.println("B: " + t + ", P: " + bp);
+							temp[i] = new AnalysisPair(s, t, ap + bp, aP.getData1(), aP.getData2());
+							temp[i].addData(a, b);
+						}
+						// Sort
+						temp = quickSort(0, 255, temp);
+						// Filter
+						for (int i = 0; i < x; i++) {
+							AnalysisPair curr = temp[255 - i];
+							System.out.println("A: " + curr.getNGram());
+							System.out.println("B: " + curr.getNGram2());
+							input[index] = curr;
+							index++;
+						}
+
 					}
 					// Sort
 					input = quickSort(0, input.length - 1, input);
@@ -311,22 +310,65 @@ public class LanguageModel {
 					// END
 					loop++;
 				} else {
-					// Character at or beyond limit
-					if (loop != n - 1) {
-						// Trim
+					for (AnalysisPair aP : workQueue) {
+						if (aP == null) {
+							continue;
+						}
+						// Character at or beyond limit
+						String q = aP.getNGram();
+						String r = aP.getNGram2();
+						if (loop != n - 1) {
+							// Trim
+							q = new String(stringTrim(q.toCharArray())).substring(0, n-2);
+							r = new String(stringTrim(r.toCharArray())).substring(0, n-2);
+						}
+						// Extend
+						AnalysisPair[] temp = new AnalysisPair[256];
+						for (int i = 0; i < 256; i++) {
+							char a = (char) i;
+							char b = cXOR[i];
+							String s = q + a;
+							String t = r + b;
+							double ap = counter.count(s);
+							double bp = counter.count(t);
+							System.out.println("A: " + s + ", P: " + ap);
+							System.out.println("B: " + t + ", P: " + bp);
+							temp[i] = new AnalysisPair(s, t, ap + bp, aP.getData1(), aP.getData2());
+							temp[i].addData(a, b);
+						}
+						// Sort
+						temp = quickSort(0, 255, temp);
+						// Filter
+						for (int i = 0; i < x; i++) {
+							AnalysisPair curr = temp[255 - i];
+							System.out.println("A: " + curr.getNGram());
+							System.out.println("B: " + curr.getNGram2());
+							input[index] = curr;
+							index++;
+						}
 					}
-					// Extend
-					
 					// Sort
-					
+					input = quickSort(0, input.length - 1, input);
 					// Filter
+					for (int i = 0; i < x; i++) {
+						workQueue[i] = input[(input.length - 1) - x];
+					}
+					// END
+					loop++;
 				}
 			}
 			br.close();
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-		return null;
+		String[] output = new String[x * 2];
+		for (int i = 0; i < x; i++) {
+			output[i] = workQueue[i].getData1();
+		}
+		for (int i = 0; i < x; i++) {
+			output[i + x] = workQueue[i].getData2();
+		}
+		return output;
 	}
 
 	/**

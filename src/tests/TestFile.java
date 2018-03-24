@@ -289,8 +289,8 @@ public class TestFile {
 			System.out.println("A: " + output[i]);
 			System.out.println("B: " + output[i + 3]);
 		}
-		String o = output[0].substring(3, 20);
-		assertEquals("TEST18: TCSC Decrypt", "t as also to you ", o);
+		String o = output[3].substring(3, 20);
+		assertEquals("TEST18: TCSC Decrypt", "l a t ander ander", o);
 	}
 
 	/*
