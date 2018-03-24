@@ -17,7 +17,7 @@ import project.LanguageModel;
 
 public class TestFile {
 
-	NGramProcessLM model, model4, laplace, gt, wb;
+	NGramProcessLM model, model4, gt, wb;
 
 	/**
 	 * Setup method for initialising test variables
@@ -121,12 +121,17 @@ public class TestFile {
 	 * Language Smoothing Test (Laplace)
 	 * 
 	 */
-	// @Test
+	@Test
 	public void testEight() {
-		// Currently does not accurately smooth
-		NGramProcessLM lm = LanguageModel.createModel(3);
-		laplace = LanguageModel.smoothingLaplace(model, model.maxNGram());
-		assertEquals("TEST8: Laplace Smoothing", true, laplace.prob("g,!") > lm.prob("g,!"));
+		int n = 3;
+		String s = "g,!";
+		TrieCharSeqCounter laplace = new TrieCharSeqCounter(n);
+		laplace = LanguageModel.trainTCSC(laplace, n, "./resources/corpus/A Tale of Two Cities - Charles Dickens.txt");
+		TrieCharSeqCounter lm = new TrieCharSeqCounter(n);
+		lm = LanguageModel.smoothingLaplace(lm, n);
+		lm = LanguageModel.trainTCSC(lm, n, "./resources/corpus/A Tale of Two Cities - Charles Dickens.txt");
+		System.out.println("LAPLACE: " + laplace.count(s) + ", BASE: " + lm.count(s));
+		assertEquals("TEST8: Laplace Smoothing", true, laplace.count(s) > lm.count(s));
 	}
 
 	/**
@@ -187,7 +192,6 @@ public class TestFile {
 	 */
 	@Test
 	public void testThirteen() throws IOException {
-		System.out.println("LAMBDA: " + model.getLambdaFactor());
 		FileWriter fw = new FileWriter("./newfile.txt");
 		fw.append(new String(createXOR(((char) 2 + "this is the test!").toCharArray(),
 				((char) 2 + "I am also to test").toCharArray())));
@@ -200,8 +204,8 @@ public class TestFile {
 			System.out.println("A: " + output[i]);
 			System.out.println("B: " + output[i + 3]);
 		}
-		String o = output[2].substring(3, 20);
-		assertEquals("TEST12: Simple Decrypt", "T as also to you ", o);
+		String o = output[0].substring(3, 20);
+		assertEquals("TEST12: Simple Decrypt", "t as also to you ", o);
 		f.delete();
 
 	}
@@ -211,9 +215,11 @@ public class TestFile {
 	 */
 	@Test
 	public void testFourteen() {
-		NGramProcessLM lm = LanguageModel.createModel(3);
-		gt = LanguageModel.smoothingGoodTuring(model, model.maxNGram());
-		assertEquals("TEST14: Good Turing Smoothing", true, gt.prob("g,!") > lm.prob("g,!"));
+		TrieCharSeqCounter lm = null;
+		lm = LanguageModel.trainTCSC(lm, 3, "./resources/corpus/A Tale of Two Cities - Charles Dickens.txt");
+		TrieCharSeqCounter gt = LanguageModel.smoothingGoodTuring(lm, 3);
+		String s = "g,!";
+		assertEquals("TEST14: Good Turing Smoothing", true, gt.count(s) > lm.count(s));
 	}
 
 	/**
@@ -221,9 +227,11 @@ public class TestFile {
 	 */
 	@Test
 	public void testFifteen() {
-		NGramProcessLM lm = LanguageModel.createModel(3);
-		wb = LanguageModel.smoothingWittenBell(model, model.maxNGram());
-		assertEquals("TEST8: Witten Bell Smoothing", true, wb.prob("g,!") > lm.prob("g,!"));
+		TrieCharSeqCounter lm = null;
+		lm = LanguageModel.trainTCSC(lm, 3, "./resources/corpus/A Tale of Two Cities - Charles Dickens.txt");
+		TrieCharSeqCounter wb = LanguageModel.smoothingWittenBell(lm, 3);
+		String s = "g,!";
+		assertEquals("TEST15: Witten Bell Smoothing", true, wb.count(s) > lm.count(s));
 	}
 
 	/**

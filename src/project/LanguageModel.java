@@ -30,8 +30,10 @@ public class LanguageModel {
 	 */
 	public static void main(String[] args) {
 		NGramProcessLM model = null;
+		TrieCharSeqCounter counter = null;
 		boolean fail = false;
 		boolean newItem = false;
+		boolean TCSC = false;
 		String s = "";
 		Scanner ui = new Scanner(System.in);
 		// Create new ciphertext
@@ -71,6 +73,7 @@ public class LanguageModel {
 			if (f.exists()) {
 				model = loadFromFile(s);
 				n = model.maxNGram();
+				counter = loadCounter(s);
 			} else {
 				System.out.println("File Does Not Exist");
 				fail = true;
@@ -87,19 +90,55 @@ public class LanguageModel {
 				// Calls train method for each file
 				System.out.println("Training: " + child.getName());
 				model = train(model, file.toString() + "/" + child.getName());
+				counter = trainTCSC(counter, n, file.toString() + "/" + child.getName());
 			}
 			// Choose Language Smoothing
 			System.out.println("Use Smoothing? <Y/N>");
 			s = ui.next();
 			if (s.equals("Y") || s.equals("y")) {
-				System.out.println("Select Method: <1/2/3>\n1: Laplace \n2: Good-Turing \n3: Witten-Bell");
+				System.out.println(
+						"Select Method: <1/2/3>\n1: Laplace \n2: Good-Turing \n3: Witten-Bell \n4: Witten-Bell(LingPipe)");
 				i = Integer.valueOf(ui.next());
 				if (i == 1) {
-					model = smoothingLaplace(model, n);
+					TCSC = true;
+					counter = smoothingLaplace(counter, n);
 				} else if (i == 2) {
-					model = smoothingGoodTuring(model, n);
+					TCSC = true;
+					counter = smoothingGoodTuring(counter, n);
 				} else if (i == 3) {
-					model = smoothingWittenBell(model, n);
+					TCSC = true;
+					counter = smoothingWittenBell(counter, n);
+				} else if (i == 4) {
+					// Automated Execution
+					System.out.println("Simple or Complex Solver? <S/C>");
+					s = ui.next();
+					if (s.equals("C") || s.equals("c")) {
+						System.out.println("Enter Ciphertext Filename: <string>");
+						s = "./resources/ciphertext/" + ui.next() + ".txt";
+						if (new File(s).exists()) {
+							int x;
+							File f = new File(s);
+							System.out.println("Enter The Amount Of Results To Keep Each Pass: <int>");
+							x = Integer.valueOf(ui.next());
+							String[] output = solver(f, model, x);
+							for (int j = 0; j < (output.length / 2); j++) {
+								System.out.println("i: " + j);
+								System.out.println("A: " + output[j]);
+								System.out.println("B: " + output[j + (output.length / 2)]);
+							}
+						} else {
+							System.out.println("File Does Not Exist");
+							fail = true;
+						}
+					} else if (s.equals("S") || s.equals("s")) {
+						System.out.println("Enter Ciphertext Message: <string>");
+						s = ui.next();
+						String[] output = simpleSolver(s.toCharArray(), model);
+						System.out.println("A: " + output[0] + "\nB: " + output[1]);
+					} else {
+						System.out.println("Invalid Input");
+						fail = true;
+					}
 				} else {
 					System.out.println("Invalid Input");
 					fail = true;
@@ -115,8 +154,28 @@ public class LanguageModel {
 			System.out.println("Invalid Input");
 			fail = true;
 		}
-		// Ask to Save model (Potentially Irrelevant)
-		if (!fail & !newItem) {
+		if (!fail && TCSC) {
+			// Implemented Execution
+			System.out.println("Enter Ciphertext Filename: <string>");
+			s = "./resources/ciphertext/" + ui.next() + ".txt";
+			if (new File(s).exists()) {
+				int x;
+				File f = new File(s);
+				System.out.println("Enter The Amount Of Results To Keep Each Pass: <int>");
+				x = Integer.valueOf(ui.next());
+				String[] output = TCSCSolver(f, counter, n, x);
+				for (int j = 0; j < (output.length / 2); j++) {
+					System.out.println("i: " + j);
+					System.out.println("A: " + output[j]);
+					System.out.println("B: " + output[j + (output.length / 2)]);
+				}
+			} else {
+				System.out.println("File Does Not Exist");
+				fail = true;
+			}
+		}
+		// Ask to Save model
+		if (!fail && newItem) {
 			System.out.println("Save Model To Resources? <Y/N>");
 			s = ui.next();
 			if (s.equals("Y") || s.equals("y")) {
@@ -129,6 +188,7 @@ public class LanguageModel {
 					if (s.equals("Y") || s.equals("y")) {
 						f.delete();
 						saveToFile((s), model);
+						saveCounter(counter, s);
 					} else if (s.equals("N") || s.equals("n")) {
 						System.out.println("Continuing");
 					} else {
@@ -145,39 +205,149 @@ public class LanguageModel {
 				fail = true;
 			}
 		}
-		// Execute Process
-		if (!fail) {
-			System.out.println("Simple or Complex Solver? <S/C>");
-			s = ui.next();
-			if (s.equals("C") || s.equals("c")) {
-				System.out.println("Enter Ciphertext Filename: <string>");
-				s = "./resources/ciphertext/" + ui.next() + ".txt";
-				if (new File(s).exists()) {
-					int x;
-					File f = new File(s);
-					System.out.println("Enter The Amount Of Results To Keep Each Pass: <int>");
-					x = Integer.valueOf(ui.next());
-					String[] output = solver(f, model, x);
-					for (int j = 0; j < (output.length / 2); j++) {
-						System.out.println("i: " + j);
-						System.out.println("A: " + output[j]);
-						System.out.println("B: " + output[j + (output.length / 2)]);
+		ui.close();
+	}
+
+	/**
+	 * 
+	 * @param counter
+	 * @param n
+	 * @return
+	 */
+	public static String[] TCSCSolver(File message, TrieCharSeqCounter counter, int n, int x) {
+		String[] output = new String[x * 2];
+		int currentChar;
+		char c;
+		char[] cXOR;
+		boolean b = false;
+		char[] strA = new char[n];
+		char[] strB = new char[n];
+		double prob = 0.0;
+		long total = counter.totalSequenceCount();
+		AnalysisPair[] workQueue = new AnalysisPair[x];
+		AnalysisPair[] input = new AnalysisPair[x * x];
+		try {
+			// Open File
+			BufferedReader br = new BufferedReader(new FileReader(message));
+			// Read until file is closed
+			int loop = 0;
+			while ((currentChar = br.read()) != -1) {
+				int index = 0;
+				// Create XOR Map for input character
+				c = (char) currentChar;
+				cXOR = XORHandler(c);
+				// Handle First Character
+				if (b == false) {
+					strA[0] = 2;
+					strB[0] = 2;
+					String s = new String(strA);
+					String t = new String(strB);
+					prob = Math.log((counter.count(s) / total) / (counter.count(t) / total));
+					workQueue[0] = new AnalysisPair(s, t, prob, s, t);
+					b = true;
+					loop++;
+					continue;
+				} else {
+					// Act for each item in the workqueue
+					for (int i = 0; i < workQueue.length; i++) {
+						if (workQueue[i] == null) {
+							continue;
+						} else {
+							if (loop < n - 1) {
+								// SKIP TRIM
+								// Make NGRM model for loop vals
+								TrieCharSeqCounter tempCounter = null;
+								AnalysisPair[] temp = new AnalysisPair[256];
+								// Train the Model
+								final File file = new File("./resources/corpus/");
+								for (final File child : file.listFiles()) {
+									// Calls train method for each file
+									System.out.println("Training: " + child.getName());
+									tempCounter = trainTCSC(tempCounter, loop, file.toString() + "/" + child.getName());
+								}
+								// EXPAND
+								for (int j = 0; j < 256; j++) {
+									AnalysisPair aP = workQueue[i];
+									strA = aP.getNGram().toCharArray();
+									strB = aP.getNGram2().toCharArray();
+									char d = (char) j;
+									char e = cXOR[j];
+									strA[loop] = d;
+									strB[loop] = e;
+									String s = new String(strA);
+									String t = new String(strB);
+									prob = Math.log((tempCounter.count(s) / total) / (tempCounter.count(t) / total));
+									temp[j] = new AnalysisPair(new String(strA), new String(strB), prob, aP.getData1(),
+											aP.getData2());
+									temp[j].addData(d, e);
+								}
+								// SORT
+								temp = quickSort(0, 255, temp);
+								// FILTER
+								for (int j = 0; j < x; j++) {
+									input[index] = temp[255 - j];
+									index++;
+								}
+							} else {
+								if (loop != n - 1) {
+									// TRIM (if neccessary)
+									strA = stringTrim(workQueue[i].getNGram().toCharArray());
+									strB = stringTrim(workQueue[i].getNGram2().toCharArray());
+								}
+								// EXPAND
+								AnalysisPair[] temp = new AnalysisPair[256];
+								for (int j = 0; j < 256; j++) {
+									char d = (char) j;
+									char e = cXOR[j];
+									strA[n - 1] = d;
+									strB[n - 1] = e;
+									String s = new String(strA);
+									String t = new String(strB);
+									prob = Math.log((counter.count(s) / total) / (counter.count(t) / total));
+									temp[j] = new AnalysisPair(new String(strA), new String(strB), prob,
+											workQueue[i].getData1(), workQueue[i].getData2());
+									temp[j].addData(d, e);
+								}
+								// SORT
+								temp = quickSort(0, 255, temp);
+								// FILTER
+								for (int j = 0; j < x; j++) {
+									input[index] = temp[255 - j];
+									index++;
+								}
+							}
+						}
+					}
+				}
+				// SORT INPUT
+				workQueue = new AnalysisPair[x];
+				if (loop == 1) {
+					input = quickSort(0, x - 1, input);
+					for (int j = 0; j < x; j++) {
+						workQueue[j] = input[(x - 1) - j];
 					}
 				} else {
-					System.out.println("File Does Not Exist");
-					fail = true;
+					input = quickSort(0, x * x - 1, input);
+					// FILTER
+					for (int j = 0; j < x; j++) {
+						workQueue[j] = input[(input.length - 1) - j];
+					}
 				}
-			} else if (s.equals("S") || s.equals("s")) {
-				System.out.println("Enter Ciphertext Message: <string>");
-				s = ui.next();
-				String[] output = simpleSolver(s.toCharArray(), model);
-				System.out.println("A: " + output[0] + "\nB: " + output[1]);
-			} else {
-				System.out.println("Invalid Input");
-				fail = true;
+				input = new AnalysisPair[x * x];
+				loop++;
 			}
+			br.close();
+		} catch (IOException e) {
+			System.out.println(e.getMessage());
+			e.printStackTrace();
 		}
-		ui.close();
+		for (int i = 0; i < workQueue.length; i++) {
+			output[i] = workQueue[i].getData1();
+		}
+		for (int i = 0; i < workQueue.length; i++) {
+			output[i + workQueue.length] = workQueue[i].getData2();
+		}
+		return output;
 	}
 
 	/**
@@ -259,6 +429,13 @@ public class LanguageModel {
 								// Make NGRM model for loop vals
 								NGramProcessLM tempModel = createModel(loop + 1);
 								AnalysisPair[] temp = new AnalysisPair[256];
+								// Train the Model
+								final File file = new File("./resources/corpus/");
+								for (final File child : file.listFiles()) {
+									// Calls train method for each file
+									System.out.println("Training: " + child.getName());
+									tempModel = train(tempModel, file.toString() + "/" + child.getName());
+								}
 								// EXPAND
 								for (int j = 0; j < 256; j++) {
 									AnalysisPair aP = workQueue[i];
@@ -650,21 +827,15 @@ public class LanguageModel {
 				if (loop < n - 1) {
 					// Fill ngram until almost full
 					ngram[loop] = currentchar;
-					// System.out.println("[" + loop + "]-NGRAM: " + new
-					// String(ngram));
 				} else if (loop == n - 1) {
 					// Fill final spot (No Trim) then count
 					ngram[loop] = currentchar;
 					tcsc.incrementSubstrings(new String(ngram));
-					// System.out.println("[" + loop + "]-NGRAM: " + new
-					// String(ngram));
 				} else {
 					// Trim then Fill then count
 					stringTrim(ngram);
 					ngram[n - 1] = currentchar;
 					tcsc.incrementSubstrings(new String(ngram));
-					// System.out.println("[" + loop + "]-NGRAM: " + new
-					// String(ngram));
 				}
 				// Count Loops
 				loop++;
@@ -735,9 +906,7 @@ public class LanguageModel {
 	 *            The total amount of results from the model
 	 * @return The smoothed double
 	 */
-	public static NGramProcessLM smoothingLaplace(NGramProcessLM model, int n) {
-		// Remove Witten-Bell Smoothing
-		model.setLambdaFactor(0);
+	public static TrieCharSeqCounter smoothingLaplace(TrieCharSeqCounter counter, int n) {
 		// Follows the same process as the AP model production
 		char[] cSeq = new char[n];
 		int temp;
@@ -758,12 +927,12 @@ public class LanguageModel {
 			cSeq[j] = Character.valueOf((char) (temp + 1));
 			tempS = String.valueOf(cSeq);
 			// Trains for an extra result
-			model.train(tempS);
+			counter.incrementSubstrings(tempS);
 			// Moves back to least significant character
 			j = n - 1;
 		}
 		// Returns the smoothed model
-		return model;
+		return counter;
 	}
 
 	/**
@@ -773,28 +942,85 @@ public class LanguageModel {
 	 * @param n
 	 * @return
 	 */
-	public static NGramProcessLM smoothingGoodTuring(NGramProcessLM model, int n) {
-		// Remove Witten-Bell Smoothing
-		double lambdaFactor = model.getLambdaFactor();
-		model.setLambdaFactor(lambdaFactor);
-		// TODO: FINISH METHOD
-		return null;
+	public static TrieCharSeqCounter smoothingGoodTuring(TrieCharSeqCounter counter, int n) {
+		// Follows the same process as the AP model production
+		char[] cSeq = new char[n];
+		int temp;
+		String tempS;
+		int val = (int) Math.pow(256, n);
+		AnalysisPair[] aP = new AnalysisPair[val];
+		// Fill string with ASCII(0) characters
+		for (int i = 0; i < n; i++) {
+			cSeq[i] = Character.valueOf((char) 0);
+		}
+		int j = n - 1;
+		for (int i = 0; i < val; i++) {
+			// Moves onto the next significant character if it's 256
+			while (Integer.valueOf((int) cSeq[j]) == 256) {
+				cSeq[j] = Character.valueOf((char) 0);
+				j--;
+			}
+			// Steps the character
+			temp = Integer.valueOf((int) cSeq[j]);
+			cSeq[j] = Character.valueOf((char) (temp + 1));
+			tempS = String.valueOf(cSeq);
+			// Trains for an extra result
+			aP[i] = new AnalysisPair(tempS, counter.count(tempS));
+			// Moves back to least significant character
+			j = n - 1;
+		}
+		// Returns the smoothed model
+		return counter;
 	}
 
 	/**
 	 * TODO: JAVADOC
 	 * 
-	 * @param model
+	 * @param counter
 	 * @param n
 	 * @return
 	 */
-	public static NGramProcessLM smoothingWittenBell(NGramProcessLM model, int n) {
-		/*
-		 * Java Linpipe Natively uses Witten-Bell Smoothing lambda(c1,...,cn) =
-		 * extCount(c1,...,cn) / (extCount(c1,...,cn) + L *
-		 * numExtensions(c1,...,cn))
-		 */
-		return model;
+	public static TrieCharSeqCounter smoothingWittenBell(TrieCharSeqCounter counter, int n) {
+		// Follows the same process as the AP model production
+		char[] cSeq = new char[n];
+		int temp;
+		int count = 0;
+		String tempS;
+		int val = (int) Math.pow(256, n);
+		AnalysisPair[] aP = new AnalysisPair[val];
+		// Fill string with ASCII(0) characters
+		for (int i = 0; i < n; i++) {
+			cSeq[i] = Character.valueOf((char) 0);
+		}
+		int j = n - 1;
+		for (int i = 0; i < val; i++) {
+			// Moves onto the next significant character if it's 256
+			while (Integer.valueOf((int) cSeq[j]) == 256) {
+				cSeq[j] = Character.valueOf((char) 0);
+				j--;
+			}
+			// Steps the character
+			temp = Integer.valueOf((int) cSeq[j]);
+			cSeq[j] = Character.valueOf((char) (temp + 1));
+			tempS = String.valueOf(cSeq);
+			// Trains for an extra result
+			aP[i] = new AnalysisPair(tempS, counter.count(tempS));
+			// Moves back to least significant character
+			j = n - 1;
+			// Check for smooth
+			if(counter.count(tempS) > 1) {
+				count++;
+			}
+		}
+		double offset = count / counter.totalSequenceCount();
+		System.out.println("OFFSET: " + offset);
+		for(int i = 0; i < val; i++) {
+			if(aP[i].getProbability() == 0) {
+				//
+			}
+		}
+		// Returns the smoothed model
+		return counter;
 	}
 
 	/**
