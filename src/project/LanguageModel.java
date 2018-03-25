@@ -7,17 +7,22 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.Scanner;
 
 import com.aliasi.lm.NGramProcessLM;
+import com.aliasi.lm.TrieCharSeqCounter;
 
 /**
  * @author Andrew
  *
  */
 public class LanguageModel {
+
+	public static Scanner ui = new Scanner(System.in);
 
 	/**
 	 * Main method for controlling execution flow
@@ -26,183 +31,617 @@ public class LanguageModel {
 	 *            command line arguements fed to the program
 	 */
 	public static void main(String[] args) {
-		// TODO Change n declaration to command line arguement
-		int n = 3;
-		if (n < 3) {
-			if (n == 0) {
-				// TODO Properly implement load from file
-				loadFromFile(args[2]);
+		NGramProcessLM model = null;
+		TrieCharSeqCounter counter = null;
+		boolean fail = false;
+		boolean newItem = false;
+		boolean TCSC = false;
+		String s = "";
+		// Create new ciphertext
+		System.out.println("Create new Ciphertext? <Y/N>");
+		s = ui.next();
+		if (s.equals("Y") || s.equals("y")) {
+			String a, b;
+			System.out.println("Enter String 1: <string>");
+			ui.nextLine();
+			a = ui.nextLine();
+			System.out.println("Enter String 2: <string>");
+			b = ui.nextLine();
+			System.out.println("Enter Filename: <string>");
+			s = ui.nextLine();
+			try {
+				fail = createCiphertext(a.toCharArray(), b.toCharArray(), s);
+			} catch (IOException e) {
+				System.out.println(e.getMessage());
+				e.printStackTrace();
 			}
-			// TODO implement failsafe for impossible n
+		} else if (s.equals("N") || s.equals("n")) {
+			System.out.println("continue");
+		} else {
+			System.out.println("Invalid Input");
+			fail = true;
 		}
+		// Create Model
+		System.out.println("Use Exisiting Model? <Y/N>");
+		s = ui.next();
+		int n = 0;
+		int i;
+		// Choose Load or New Model
+		if (s.equals("Y") || s.equals("y")) {
+			System.out.println("Enter Filename: <string>");
+			s = String.valueOf(ui.next());
+			File f = new File("./resources/models/" + s + ".txt");
+			if (f.exists()) {
+				model = loadFromFile(s);
+				n = model.maxNGram();
+				counter = loadCounter(s);
+			} else {
+				System.out.println("File Does Not Exist");
+				fail = true;
+			}
+		} else if (s.equals("N") || s.equals("n")) {
+			newItem = true;
+			System.out.println("Creating New Model...");
+			System.out.println("Enter n value: <int>");
+			n = Integer.valueOf(ui.next());
+			model = createModel(n);
+			counter = new TrieCharSeqCounter(n);
+			// Train the Model
+			final File file = new File("./resources/corpus/");
+			for (final File child : file.listFiles()) {
+				// Calls train method for each file
+				System.out.println("Training: " + child.getName());
+				model = train(model, file.toString() + "/" + child.getName());
+				counter = trainTCSC(counter, n, file.toString() + "/" + child.getName());
+			}
 
-		// Creates java lingpipe model form NGram Language Modelling
-		NGramProcessLM model = createModel(n);
-		NGramProcessLM model2 = createModel(n - 1);
-		NGramProcessLM smoothing;
-		NGramProcessLM smoothing2;
-
-		// Searches Directory for each file
-		final File file = new File("C:/Users/Andrew/workspace/TwoTimeNLM/resources/corpus/");
-		for (final File child : file.listFiles()) {
-			// Calls train method for each file
-			System.out.println(child.getName());
-			model = train(model, file.toString() + "/" + child.getName());
-			model2 = train(model2, file.toString() + "/" + child.getName());
+		} else {
+			System.out.println("Invalid Input");
+			fail = true;
 		}
-
-		// Initialize models for smoothing
-		smoothing = model;
-		smoothing2 = model2;
-
-		// Laplace smoothing
-		smoothing = smoothingLaplace(smoothing, n);
-		smoothing = smoothingLaplace(smoothing2, (n - 1));
-
-		if (args[3].toString() == "save") {
-			// TODO Properly implement save
-			saveToFile("3gramModel", model);
-			saveToFile("2gramModel", model2);
-			saveToFile("3gramLaplace", smoothing);
-			saveToFile("2gramLaplace", smoothing2);
+		if (!fail && newItem) {
+			// Choose Language Smoothing
+			System.out.println("Use Smoothing? <Y/N>");
+			s = ui.next();
+			if (s.equals("Y") || s.equals("y")) {
+				System.out.println(
+						"Select Method: <1/2/3>\n1: Laplace \n2: Good-Turing \n3: Witten-Bell \n4: Witten-Bell(LingPipe)");
+				i = Integer.valueOf(ui.next());
+				if (i == 1) {
+					TCSC = true;
+					counter = smoothingLaplace(counter, n);
+				} else if (i == 2) {
+					TCSC = true;
+					counter = smoothingGoodTuring(counter, n);
+				} else if (i == 3) {
+					TCSC = true;
+					counter = smoothingWittenBell(counter, n);
+				} else if (i == 4) {
+					TCSC = false;
+					System.out.println("CONTINUE");
+				} else {
+					System.out.println("Invalid Input");
+					fail = true;
+				}
+			} else if (s.equals("N") || s.equals("n")) {
+				TCSC = true;
+			} else {
+				System.out.println("Invalid Input");
+				fail = true;
+			}
 		}
+		// Ask to Save model
+		if (!fail && newItem) {
+			System.out.println("Save Model To Resources? <Y/N>");
+			s = ui.next();
+			if (s.equals("Y") || s.equals("y")) {
+				System.out.println("Enter Filename: <string>");
+				s = ui.next();
+				File f = new File("./resources/models/" + s + ".txt");
+				if (f.exists()) {
+					System.out.println("File Exists, Delete and Recreate? <Y/N>");
+					s = ui.next();
+					if (s.equals("Y") || s.equals("y")) {
+						f.delete();
+						saveToFile((s), model);
+						saveCounter(counter, s);
+					} else if (s.equals("N") || s.equals("n")) {
+						System.out.println("Continuing");
+					} else {
+						System.out.println("Invalid Input");
+						fail = true;
+					}
+				} else {
+					saveToFile((s), model);
+					saveCounter(counter, s);
+				}
+			} else if (s.equals("N") || s.equals("n")) {
+				System.out.println("Continuing");
+			} else {
+				System.out.println("Invalid Input");
+				fail = true;
+			}
+		}
+		if (!fail && !TCSC) {
+			// Automated Execution
+			System.out.println("Simple or Complex Solver? <S/C>");
+			s = ui.next();
+			if (s.equals("C") || s.equals("c")) {
+				System.out.println("Enter Ciphertext Filename: <string>");
+				s = "./resources/ciphertext/" + ui.next() + ".txt";
+				if (new File(s).exists()) {
+					int x;
+					File f = new File(s);
+					System.out.println("Enter The Amount Of Results To Keep Each Pass: <int>");
+					x = Integer.valueOf(ui.next());
+					String[] output = solver(f, model, x, true);
+					for (int j = 0; j < (output.length / 2); j++) {
+						System.out.println("i: " + j);
+						System.out.println("A: " + output[j].substring(4));
+						System.out.println("B: " + output[j + (output.length / 2)].substring(4));
+					}
+				} else {
+					System.out.println("File Does Not Exist");
+					fail = true;
+				}
+			} else if (s.equals("S") || s.equals("s")) {
+				System.out.println("Enter Ciphertext Message: <string>");
+				s = ui.next();
+				String[] output = simpleSolver(s.toCharArray(), model);
+				System.out.println("A: " + output[0] + "\nB: " + output[1]);
+			} else {
+				System.out.println("Invalid Input");
+				fail = true;
+			}
+		}
+		if (!fail && TCSC) {
+			// Implemented Execution
+			System.out.println("Enter Ciphertext Filename: <string>");
+			s = "./resources/ciphertext/" + ui.next() + ".txt";
+			if (new File(s).exists()) {
+				int x;
+				File f = new File(s);
+				System.out.println("Enter The Amount Of Results To Keep Each Pass: <int>");
+				x = Integer.valueOf(ui.next());
+				System.out.println("Enter previous models? <Y/N>");
+				s = ui.next();
+				if (s.equals("Y") || s.equals("y")) {
+					String[] output = TCSCSolver(f, counter, n, x, true);
+					for (int j = 0; j < (output.length / 2); j++) {
+						System.out.println("i: " + j);
+						System.out.println("A: " + output[j].substring(4));
+						System.out.println("B: " + output[j + (output.length / 2)].substring(4));
+					}
+				} else if (s.equals("N") || s.equals("n")) {
+					String[] output = TCSCSolver(f, counter, n, x, false);
+					for (int j = 0; j < (output.length / 2); j++) {
+						System.out.println("i: " + j);
+						System.out.println("A: " + output[j]);
+						System.out.println("B: " + output[j + (output.length / 2)]);
+					}
+				} else {
+					System.out.println("Invalid Input");
+					fail = true;
+				}
 
+			} else {
+				System.out.println("File Does Not Exist");
+				fail = true;
+			}
+		}
+		ui.close();
 	}
 
-	public static String[] solver(File message, NGramProcessLM model, int x) {
-		String[] output = new String[x*2];
-		int currentChar;
-		char c;
-		char[] cXOR;
-		boolean b = false;
-		char[] strA = new char[model.maxNGram()];
-		char[] strB = new char[model.maxNGram()];
+	/**
+	 * Paths the hidden markov model with a TrieCharSeqCounter
+	 * 
+	 * @param message
+	 *            the ciphertext file
+	 * @param counter
+	 *            the TrieCharSeqCounter to use as the model
+	 * @param n
+	 *            the size of the ngrams
+	 * @param x
+	 *            the amount of results to keep each pass
+	 * @param in
+	 *            a boolean trigger for whether the user supplies additional
+	 *            models for the 0 - n-1 phase
+	 * @return the top x combinations for string decryptions
+	 */
+	public static String[] TCSCSolver(File message, TrieCharSeqCounter counter, int n, int x, boolean in) {
 		AnalysisPair[] workQueue = new AnalysisPair[x];
 		AnalysisPair[] input = new AnalysisPair[x * x];
+		int index = 0;
+		int loop = 0;
+		char c;
+		int currentChar;
+		char[] cXOR;
 		try {
-			// Open File
 			BufferedReader br = new BufferedReader(new FileReader(message));
-			// Read until file is closed
-			int loop = 0;
 			while ((currentChar = br.read()) != -1) {
-				System.out.println("LOOP: " + loop);
-				int index = 0;
-				// Create XOR Map for input character
+				// UPDATE/CLEAR VARIABLES
 				c = (char) currentChar;
 				cXOR = XORHandler(c);
-				// Handle First Character
-				if (b == false) {
-					strA[0] = 2;
-					strB[0] = 2;
-					String s = new String(strA);
-					String t = new String(strB);
-					workQueue[0] = new AnalysisPair(s, t, model.prob(s) + model.prob(t), s, t);
-					b = true;
+				index = 0;
+				input = new AnalysisPair[x * x];
+
+				System.out.println("C: " + c + ", (" + currentChar + ")");
+
+				if (loop == 0) {
+					// First Character
+					AnalysisPair[] temp = new AnalysisPair[256];
+					TrieCharSeqCounter tempCounter = null;
+					// Create Counter
+					if (n != 1) {
+						tempCounter = new TrieCharSeqCounter(1);
+						if (in == false) {
+							tempCounter = trainTCSC(tempCounter, loop + 1,
+									"./resources/corpus/A Tale of Two Cities - Charles Dickens.txt");
+						} else {
+							System.out.println("Enter filename for n:" + (loop + 1) + " Model");
+							tempCounter = loadCounter(ui.next());
+						}
+					} else {
+						tempCounter = counter;
+					}
+					// Extend
+					for (int i = 0; i < 256; i++) {
+						char a = (char) i;
+						char b = cXOR[i];
+						double ap = (double) tempCounter.count("" + a) / (double) counter.totalSequenceCount();
+						double bp = (double) tempCounter.count("" + b) / (double) counter.totalSequenceCount();
+						System.out.println("A: " + a + ", P: " + ap);
+						System.out.println("B: " + b + ", P: " + bp);
+						temp[i] = new AnalysisPair("" + a, "" + b, Math.log(ap + bp), "" + a, "" + b);
+					}
+					// Sort
+					temp = quickSort(0, 255, temp);
+					// Filter
+					for (int i = 0; i < x; i++) {
+						AnalysisPair curr = temp[255 - i];
+						System.out.println("A: " + curr.getNGram());
+						System.out.println("B: " + curr.getNGram2());
+						workQueue[i] = new AnalysisPair(curr.getNGram(), curr.getNGram2(), curr.getProbability());
+						workQueue[i].addData(curr.getNGram().charAt(0), curr.getNGram2().charAt(0));
+					}
+					// End
 					loop++;
 					continue;
-				} else {
-					// Act for each item in the workqueue
-					for (int i = 0; i < workQueue.length; i++) {
-						System.out.println("i: " + i);
-						if (workQueue[i] == null) {
-							System.out.println("CONTINUE");
+				} else if (loop < n - 1) {
+					// Character less than limit
+					// Train
+					TrieCharSeqCounter tempCounter = new TrieCharSeqCounter(loop + 1);
+					if (in == false) {
+						tempCounter = trainTCSC(tempCounter, loop + 1,
+								"./resources/corpus/A Tale of Two Cities - Charles Dickens.txt");
+					} else {
+						System.out.println("Enter filename for n:" + (loop + 1) + " Model");
+						tempCounter = loadCounter(ui.next());
+					}
+					for (AnalysisPair aP : workQueue) {
+						if (aP == null) {
+							// Skip if null
 							continue;
-						} else {
-							if (loop < model.maxNGram() - 1) {
-								// SKIP TRIM
-								// Make NGRM model for loop vals
-								NGramProcessLM tempModel = createModel(loop + 1);
-								AnalysisPair[] temp = new AnalysisPair[256];
-								// EXPAND
-								for (int j = 0; j < 256; j++) {
-									System.out.println("J1: " + j);
-									AnalysisPair aP = workQueue[i];
-									strA = aP.getNGram().toCharArray();
-									strB = aP.getNGram2().toCharArray();
-									char d = (char) j;
-									char e = cXOR[j];
-									strA[loop] = d;
-									strB[loop] = e;
-									// May have to edit to make sure that
-									// probability checks that correct ngram
-									// i.e. only [0] - [loop]
-									double prob = tempModel.prob(new String(strA)) + tempModel.prob(new String(strB));
-									temp[j] = new AnalysisPair(new String(strA), new String(strB), prob, aP.getData1(),
-											aP.getData2());
-									temp[j].addData(d, e);
-								}
-								// SORT
-								temp = quickSort(0, 255, temp);
-								// FILTER
-								for (int j = 0; j < x; j++) {
-									input[index] = temp[255 - j];
-									System.out.println("INDEX: " + index);
-									index++;
-								}
-							} else {
-								if (loop != model.maxNGram() - 1) {
-									// TRIM (if neccessary)
-									strA = stringTrim(workQueue[i].getNGram().toCharArray());
-									strB = stringTrim(workQueue[i].getNGram2().toCharArray());
-								}
-								// EXPAND
-								AnalysisPair[] temp = new AnalysisPair[256];
-								for (int j = 0; j < 256; j++) {
-									System.out.println("J2: " + j);
-									char d = (char) j;
-									char e = cXOR[j];
-									strA[model.maxNGram() - 1] = d;
-									strB[model.maxNGram() - 1] = e;
-									double prob = model.prob(new String(strA)) + model.prob(new String(strB));
-									temp[j] = new AnalysisPair(new String(strA), new String(strB), prob,
-											workQueue[i].getData1(), workQueue[i].getData2());
-									temp[j].addData(d, e);
-								}
-								// SORT
-								temp = quickSort(0, 255, temp);
-								// FILTER
-								for (int j = 0; j < x; j++) {
-									System.out.println("INDEX: " + index);
-									input[index] = temp[255 - j];
-									index++;
-								}
-							}
+						}
+						AnalysisPair[] temp = new AnalysisPair[256];
+						// Extend
+						for (int i = 0; i < 256; i++) {
+							char a = (char) i;
+							char b = cXOR[i];
+							String s = aP.getNGram() + a;
+							String t = aP.getNGram2() + b;
+							double ap = (double) tempCounter.count(s) / (double) counter.totalSequenceCount();
+							double bp = (double) tempCounter.count(t) / (double) counter.totalSequenceCount();
+							System.out.println("A: " + s + ", P: " + ap);
+							System.out.println("B: " + t + ", P: " + bp);
+							temp[i] = new AnalysisPair(s, t, Math.log(ap + bp), aP.getData1(), aP.getData2());
+							temp[i].addData(a, b);
+						}
+						// Sort
+						temp = quickSort(0, 255, temp);
+						// Filter
+						for (int i = 0; i < x; i++) {
+							AnalysisPair curr = temp[255 - i];
+							System.out.println("A: " + curr.getNGram());
+							System.out.println("B: " + curr.getNGram2());
+							input[index] = curr;
+							index++;
+						}
+
+					}
+					// Sort
+					input = quickSort(0, input.length - 1, input);
+					// Filter
+					for (int i = 0; i < x; i++) {
+						workQueue[i] = input[(input.length - 1) - x];
+					}
+					// END
+					loop++;
+				} else {
+					for (AnalysisPair aP : workQueue) {
+						if (aP == null) {
+							continue;
+						}
+						// Character at or beyond limit
+						String q = aP.getNGram();
+						String r = aP.getNGram2();
+						if (loop != n - 1 && n != 1) {
+							// Trim
+							q = new String(stringTrim(q.toCharArray())).substring(0, n - 2);
+							r = new String(stringTrim(r.toCharArray())).substring(0, n - 2);
+						}
+						// Extend
+						AnalysisPair[] temp = new AnalysisPair[256];
+						for (int i = 0; i < 256; i++) {
+							char a = (char) i;
+							char b = cXOR[i];
+							String s = q + a;
+							String t = r + b;
+							double ap = (double) counter.count(s) / (double) counter.totalSequenceCount();
+							double bp = (double) counter.count(t) / (double) counter.totalSequenceCount();
+							System.out.println("A: " + s + ", P: " + ap);
+							System.out.println("B: " + t + ", P: " + bp);
+							temp[i] = new AnalysisPair(s, t, Math.log(ap + bp), aP.getData1(), aP.getData2());
+							temp[i].addData(a, b);
+							// / (double) counter.totalSequenceCount()
+							// -Math.log(ap * bp)
+
+						}
+						// Sort
+						temp = quickSort(0, 255, temp);
+						// Filter
+						for (int i = 0; i < x; i++) {
+							AnalysisPair curr = temp[255 - i];
+							System.out.println("A: " + curr.getNGram());
+							System.out.println("B: " + curr.getNGram2());
+							input[index] = curr;
+							index++;
 						}
 					}
-				}
-				// SORT INPUT
-				workQueue = new AnalysisPair[x];
-				if (loop == 1) {
-					System.out.println("FLAG 1");
-					input = quickSort(0, x - 1, input);
-					for (int j = 0; j < x; j++) {
-						workQueue[j] = input[(x - 1) - j];
+					// Sort
+					input = quickSort(0, input.length - 1, input);
+					// Filter
+					for (int i = 0; i < x; i++) {
+						workQueue[i] = input[(input.length - 1) - x];
 					}
-				} else {
-					System.out.println("FLAG 2");
-					input = quickSort(0, x * x - 1, input);
-					// FILTER
-					for (int j = 0; j < x; j++) {
-						workQueue[j] = input[(input.length - 1) - j];
-					}
+					// END
+					loop++;
 				}
-				input = new AnalysisPair[x * x];
-				loop++;
 			}
 			br.close();
 		} catch (IOException e) {
-			System.out.println(e.getMessage());
 			e.printStackTrace();
 		}
-		for(int i = 0 ; i < workQueue.length; i++) {
+		String[] output = new String[x * 2];
+		for (int i = 0; i < x; i++) {
 			output[i] = workQueue[i].getData1();
 		}
-		for(int i = 0; i < workQueue.length; i++) {
-			output[i + workQueue.length] = workQueue[i].getData2();
+		for (int i = 0; i < x; i++) {
+			output[i + x] = workQueue[i].getData2();
 		}
 		return output;
 	}
 
+	/**
+	 * Method for turning to character arrays into an XOR'd ciphertext
+	 * 
+	 * @param a
+	 *            String for our "Plaintext a"
+	 * @param b
+	 *            String for our "Plaintext b"
+	 * @throws IOException
+	 *             Error for File IO
+	 */
+	public static boolean createCiphertext(char[] a, char[] b, String filename) throws IOException {
+		if (a.length != b.length) {
+			System.out.println("Strings must be the same length");
+			System.out.println(new String(a) + "\nLength: " + a.length);
+			System.out.println(new String(b) + "\nLength: " + b.length);
+			return true;
+		}
+		FileWriter fw = new FileWriter("./resources/ciphertext/" + filename + ".txt");
+		for (int i = 0; i < a.length; i++) {
+			fw.append((char) ((int) a[i] ^ (int) b[i]));
+		}
+		fw.close();
+		return false;
+	}
+
+	/**
+	 * The complex solver method for using a given NGramProcessLM model to
+	 * assess the shortest path through the hidden markov model in the
+	 * ciphertext
+	 * 
+	 * @param message
+	 *            the file containing the ciphertext
+	 * @param model
+	 *            the model to use for the ngram probabilities
+	 * @param x
+	 *            the amount of results to keep and extend each cycle
+	 * @param in
+	 *            a boolean trigger for whether the user supplies additional
+	 *            models for the 0 - n-1 phase
+	 * @return the top x combinations for string decyrption
+	 */
+	public static String[] solver(File message, NGramProcessLM model, int x, boolean in) {
+		AnalysisPair[] workQueue = new AnalysisPair[x];
+		AnalysisPair[] input = new AnalysisPair[x * x];
+		int index = 0;
+		int loop = 0;
+		char c;
+		int currentChar;
+		char[] cXOR;
+		try {
+			BufferedReader br = new BufferedReader(new FileReader(message));
+			while ((currentChar = br.read()) != -1) {
+				// UPDATE/CLEAR VARIABLES
+				c = (char) currentChar;
+				cXOR = XORHandler(c);
+				index = 0;
+				input = new AnalysisPair[x * x];
+
+				// System.out.println("C: " + c + ", (" + currentChar + ")");
+
+				if (loop == 0) {
+					// First Character
+					AnalysisPair[] temp = new AnalysisPair[256];
+					// Create Counter
+					NGramProcessLM tempModel = createModel(1);
+					if (model.maxNGram() != 1) {
+						if (in == false) {
+							tempModel = train(tempModel,
+									"./resources/corpus/A Tale of Two Cities - Charles Dickens.txt");
+						} else {
+							System.out.println("Enter filename for n:" + (loop + 1) + " Model");
+							tempModel = loadFromFile(ui.next());
+						}
+						tempModel = train(tempModel, "./resources/corpus/A Tale of Two Cities - Charles Dickens.txt");
+					} else {
+						tempModel = model;
+					}
+					// Extend
+					for (int i = 0; i < 256; i++) {
+						char a = (char) i;
+						char b = cXOR[i];
+						double ap = tempModel.prob("" + a);
+						double bp = tempModel.prob("" + b);
+						// System.out.println("A: " + a + ", P: " + ap);
+						// System.out.println("B: " + b + ", P: " + bp);
+						temp[i] = new AnalysisPair("" + a, "" + b, Math.log(ap * bp), "" + a, "" + b);
+					}
+					// Sort
+					temp = quickSort(0, 255, temp);
+					// Filter
+					for (int i = 0; i < x; i++) {
+						AnalysisPair curr = temp[255 - i];
+						// System.out.println("A: " + curr.getNGram());
+						// System.out.println("B: " + curr.getNGram2());
+						workQueue[i] = new AnalysisPair(curr.getNGram(), curr.getNGram2(), curr.getProbability());
+						workQueue[i].addData(curr.getNGram().charAt(0), curr.getNGram2().charAt(0));
+					}
+					// End
+					loop++;
+					continue;
+				} else if (loop < model.maxNGram() - 1) {
+					// Character less than limit
+					// Train
+					NGramProcessLM tempModel = createModel(loop + 1);
+					if (in == false) {
+						tempModel = train(tempModel, "./resources/corpus/A Tale of Two Cities - Charles Dickens.txt");
+					} else {
+						System.out.println("Enter filename for n:" + (loop + 1) + " Model");
+						tempModel = loadFromFile(ui.next());
+					}
+					for (AnalysisPair aP : workQueue) {
+						if (aP == null) {
+							// Skip if null
+							continue;
+						}
+						AnalysisPair[] temp = new AnalysisPair[256];
+						// Extend
+						for (int i = 0; i < 256; i++) {
+							char a = (char) i;
+							char b = cXOR[i];
+							String s = aP.getNGram() + a;
+							String t = aP.getNGram2() + b;
+							double ap = tempModel.prob(s);
+							double bp = tempModel.prob(t);
+							System.out.println("A: " + s + ", P: " + ap);
+							System.out.println("B: " + t + ", P: " + bp);
+							temp[i] = new AnalysisPair(s, t, Math.log(ap * bp), aP.getData1(), aP.getData2());
+							temp[i].addData(a, b);
+						}
+						// Sort
+						temp = quickSort(0, 255, temp);
+						// Filter
+						for (int i = 0; i < x; i++) {
+							AnalysisPair curr = temp[255 - i];
+							System.out.println("A: " + curr.getNGram());
+							System.out.println("B: " + curr.getNGram2());
+							input[index] = curr;
+							index++;
+						}
+
+					}
+					// Sort
+					input = quickSort(0, input.length - 1, input);
+					// Filter
+					for (int i = 0; i < x; i++) {
+						workQueue[i] = input[(input.length - 1) - x];
+					}
+					// END
+					loop++;
+				} else {
+					for (AnalysisPair aP : workQueue) {
+						if (aP == null) {
+							continue;
+						}
+						// Character at or beyond limit
+						String q = aP.getNGram();
+						String r = aP.getNGram2();
+						if (loop != model.maxNGram() - 1 && model.maxNGram() != 1) {
+							// Trim
+							q = new String(stringTrim(q.toCharArray())).substring(0, model.maxNGram() - 2);
+							r = new String(stringTrim(r.toCharArray())).substring(0, model.maxNGram() - 2);
+						}
+						// Extend
+						AnalysisPair[] temp = new AnalysisPair[256];
+						for (int i = 0; i < 256; i++) {
+							char a = (char) i;
+							char b = cXOR[i];
+							String s = q + a;
+							String t = r + b;
+							double ap = model.prob(s);
+							double bp = model.prob(t);
+							System.out.println("A: " + s + ", P: " + ap);
+							System.out.println("B: " + t + ", P: " + bp);
+							temp[i] = new AnalysisPair(s, t, Math.log(ap * bp), aP.getData1(), aP.getData2());
+							temp[i].addData(a, b);
+						}
+						// Sort
+						temp = quickSort(0, 255, temp);
+						// Filter
+						for (int i = 0; i < x; i++) {
+							AnalysisPair curr = temp[255 - i];
+							System.out.println("A: " + curr.getNGram());
+							System.out.println("B: " + curr.getNGram2());
+							input[index] = curr;
+							index++;
+						}
+					}
+					// Sort
+					input = quickSort(0, input.length - 1, input);
+					// Filter
+					for (int i = 0; i < x; i++) {
+						workQueue[i] = input[(input.length - 1) - x];
+					}
+					// END
+					loop++;
+				}
+			}
+			br.close();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		String[] output = new String[x * 2];
+		for (int i = 0; i < x; i++) {
+			output[i] = workQueue[i].getData1();
+		}
+		for (int i = 0; i < x; i++) {
+			output[i + x] = workQueue[i].getData2();
+		}
+		return output;
+
+	}
+
+	/**
+	 * Moves each character back an index, dropping the character that was at
+	 * index 0 and clears the character at index length -1
+	 * 
+	 * @param strA
+	 *            the string to be trimmed
+	 * @return the trimmed string
+	 */
 	public static char[] stringTrim(char[] strA) {
 		for (int j = 1; j < strA.length; j++) {
 			// Remove least significant character
@@ -213,9 +652,14 @@ public class LanguageModel {
 	}
 
 	/**
+	 * Solution to the problem that assumes the simplest state in that the
+	 * ciphertext is very short and that our value for the amount of items kept
+	 * each cycle is 1
 	 * 
 	 * @param message
+	 *            ciphertext string
 	 * @param model
+	 *            model for ngram probabilities
 	 */
 	public static String[] simpleSolver(char[] message, NGramProcessLM model) {
 		// Strings for current NGram
@@ -237,7 +681,6 @@ public class LanguageModel {
 			// Create XOR map
 			cXOR = XORHandler(c);
 			// Code until ngram size is reached
-			System.out.println("int i: " + i + "\nchar c: " + c + "\nint c: " + Integer.valueOf((char) c));
 			if (i <= model.maxNGram() - 2) {
 				if (i == 0) {
 					// File Load: First read character is ASCII - 02
@@ -246,8 +689,6 @@ public class LanguageModel {
 					// Update output string
 					strSA += strA[i];
 					strSB += strB[i];
-					System.out.println("A: " + strSA);
-					System.out.println("B: " + strSB);
 
 				} else {
 					NGramProcessLM temp = createModel(i);
@@ -256,7 +697,7 @@ public class LanguageModel {
 						strA[i] = (char) k;
 						strB[i] = cXOR[k];
 						String s = (new String(strA.toString()) + new String(strB));
-						double p = temp.prob(new String(strA)) + temp.prob(new String(strB));
+						double p = Math.log(temp.prob(new String(strA)) * temp.prob(new String(strB)));
 						score[k] = new AnalysisPair(s, p);
 					}
 					// SORT
@@ -268,8 +709,6 @@ public class LanguageModel {
 					// Update output string
 					strSA += strA[i];
 					strSB += strB[i];
-					System.out.println("A: " + strSA);
-					System.out.println("B: " + strSB);
 				}
 			} else {
 				if (i != model.maxNGram() - 1) {
@@ -282,7 +721,7 @@ public class LanguageModel {
 					strB[model.maxNGram() - 1] = cXOR[j];
 					// SCORE Strings: score[i] -> aPA[i] + aPB[i]
 					String s = new String(strA) + new String(strB);
-					double p = (model.prob(new String(strA)) + model.prob(new String(strB)));
+					double p = Math.log(model.prob(new String(strA)) * model.prob(new String(strB)));
 					score[j] = new AnalysisPair(s, p);
 				}
 				// SORT
@@ -294,12 +733,8 @@ public class LanguageModel {
 				// Update output string
 				strSA += strA[model.maxNGram() - 1];
 				strSB += strB[model.maxNGram() - 1];
-				System.out.println("A: " + strSA);
-				System.out.println("B: " + strSB);
 			}
 		}
-		System.out.println("OUTPUT A: " + strSA);
-		System.out.println("OUTPUT B: " + strSB);
 
 		output[0] = strSA;
 		output[1] = strSB;
@@ -460,7 +895,6 @@ public class LanguageModel {
 			// For each line of the file train the model and output to console
 			for (String line; (line = br.readLine()) != null;) {
 				model.train(line);
-				// System.out.println(line);
 			}
 			br.close();
 			return model;
@@ -469,6 +903,54 @@ public class LanguageModel {
 			e.printStackTrace();
 		}
 		return null;
+	}
+
+	/**
+	 * Method for training a TrieCharSeqCounter for the counts of ngrams
+	 * appearing in our model for the given value of n
+	 * 
+	 * @param tcsc
+	 *            the TrieCharSeqCounter object we're training
+	 * @param n
+	 *            the size of the ngram
+	 * @param filename
+	 *            the file we are training from
+	 * @return the trained TrieCharSeqCounter object
+	 */
+	public static TrieCharSeqCounter trainTCSC(TrieCharSeqCounter tcsc, int n, String filename) {
+		File f = new File(filename);
+		int loop = 0;
+		int c;
+		char currentchar;
+		char[] ngram = new char[n];
+		try {
+			BufferedReader br = new BufferedReader(new FileReader(f));
+			// Read file character by character
+			while ((c = br.read()) != -1) {
+				currentchar = (char) c;
+				if (loop < n - 1) {
+					// Fill ngram until almost full
+					ngram[loop] = currentchar;
+				} else if (loop == n - 1) {
+					// Fill final spot (No Trim) then count
+					ngram[loop] = currentchar;
+					tcsc.incrementSubstrings(new String(ngram));
+				} else {
+					// Trim then Fill then count
+					stringTrim(ngram);
+					ngram[n - 1] = currentchar;
+					tcsc.incrementSubstrings(new String(ngram));
+				}
+				// Count Loops
+				loop++;
+			}
+			br.close();
+		} catch (IOException e) {
+			System.out.println(e.getMessage());
+			e.printStackTrace();
+		}
+		// Return
+		return tcsc;
 	}
 
 	/**
@@ -514,8 +996,6 @@ public class LanguageModel {
 		AnalysisPair[] output = new AnalysisPair[topX];
 		for (int i = 0; i < topX; i++) {
 			output[i] = new AnalysisPair(aP[i].getNGram(), aP[i].getProbability());
-			// OUTPUT: System.out.println("Rank " + (i + 1) + ": " +
-			// aP[i].toString());
 		}
 		// Return Sorted NGram information
 		return output;
@@ -530,7 +1010,7 @@ public class LanguageModel {
 	 *            The total amount of results from the model
 	 * @return The smoothed double
 	 */
-	public static NGramProcessLM smoothingLaplace(NGramProcessLM model, int n) {
+	public static TrieCharSeqCounter smoothingLaplace(TrieCharSeqCounter counter, int n) {
 		// Follows the same process as the AP model production
 		char[] cSeq = new char[n];
 		int temp;
@@ -551,12 +1031,98 @@ public class LanguageModel {
 			cSeq[j] = Character.valueOf((char) (temp + 1));
 			tempS = String.valueOf(cSeq);
 			// Trains for an extra result
-			model.train(tempS);
+			counter.incrementSubstrings(tempS);
 			// Moves back to least significant character
 			j = n - 1;
 		}
 		// Returns the smoothed model
-		return model;
+		return counter;
+	}
+
+	/**
+	 * TODO: JAVADOC
+	 * 
+	 * @param model
+	 * @param n
+	 * @return
+	 */
+	public static TrieCharSeqCounter smoothingGoodTuring(TrieCharSeqCounter counter, int n) {
+		// Follows the same process as the AP model production
+		char[] cSeq = new char[n];
+		int temp;
+		String tempS;
+		int val = (int) Math.pow(256, n);
+		AnalysisPair[] aP = new AnalysisPair[val];
+		// Fill string with ASCII(0) characters
+		for (int i = 0; i < n; i++) {
+			cSeq[i] = Character.valueOf((char) 0);
+		}
+		int j = n - 1;
+		for (int i = 0; i < val; i++) {
+			// Moves onto the next significant character if it's 256
+			while (Integer.valueOf((int) cSeq[j]) == 256) {
+				cSeq[j] = Character.valueOf((char) 0);
+				j--;
+			}
+			// Steps the character
+			temp = Integer.valueOf((int) cSeq[j]);
+			cSeq[j] = Character.valueOf((char) (temp + 1));
+			tempS = String.valueOf(cSeq);
+			// Trains for an extra result
+			aP[i] = new AnalysisPair(tempS, counter.count(tempS));
+			// Moves back to least significant character
+			j = n - 1;
+		}
+		// Returns the smoothed model
+		return counter;
+	}
+
+	/**
+	 * TODO: JAVADOC
+	 * 
+	 * @param counter
+	 * @param n
+	 * @return
+	 */
+	public static TrieCharSeqCounter smoothingWittenBell(TrieCharSeqCounter counter, int n) {
+		// Follows the same process as the AP model production
+		char[] cSeq = new char[n];
+		int temp;
+		int count = 0;
+		String tempS;
+		int val = (int) Math.pow(256, n);
+		long total = counter.totalSequenceCount();
+		// Fill string with ASCII(0) characters
+		for (int i = 0; i < n; i++) {
+			cSeq[i] = Character.valueOf((char) 0);
+		}
+		int j = n - 1;
+		for (int i = 0; i < val; i++) {
+			// Moves onto the next significant character if it's 256
+			while (Integer.valueOf((int) cSeq[j]) == 256) {
+				cSeq[j] = Character.valueOf((char) 0);
+				j--;
+			}
+			// Steps the character
+			temp = Integer.valueOf((int) cSeq[j]);
+			cSeq[j] = Character.valueOf((char) (temp + 1));
+			tempS = String.valueOf(cSeq);
+			// Moves back to least significant character
+			j = n - 1;
+			// Check for smooth
+			if (counter.count(tempS) > 1) {
+				count++;
+			}
+		}
+		// Console Information
+		double offset = (double) count / (double) total;
+		double negOffset = 1 - offset;
+		System.out.println("TOTALT: " + total);
+		System.out.println("COUNT: " + count);
+		System.out.println("OFFSET: " + (double) offset);
+		System.out.println("NEG OFFSET: " + (double) negOffset);
+		// Returns the smoothed model
+		return counter;
 	}
 
 	/**
@@ -569,7 +1135,8 @@ public class LanguageModel {
 	 */
 	public static void saveToFile(String filename, NGramProcessLM model) {
 		// Create File
-		File f = new File("C:/Users/Andrew/workspace/TwoTimeNLM/resources/models/" + filename + ".txt");
+		File f = new File("./resources/models/" + filename + ".txt");
+		System.out.println("SAVING: " + f.getAbsolutePath());
 		OutputStream out;
 		try {
 			// Establish Output Stream
@@ -596,7 +1163,8 @@ public class LanguageModel {
 	public static NGramProcessLM loadFromFile(String filename) {
 		NGramProcessLM model = null;
 		// Create File
-		File f = new File("C:/Users/Andrew/workspace/TwoTimeNLM/resources/models/" + filename + ".txt");
+		File f = new File("./resources/models/" + filename + ".txt");
+		System.out.println("LOADING: " + f.getName());
 		try {
 			// Establish Input Stream
 			InputStream input;
@@ -611,5 +1179,61 @@ public class LanguageModel {
 			e.printStackTrace();
 		}
 		return model;
+	}
+
+	/**
+	 * This method is for saving a TrieCharSeqCounter object to the disc
+	 * 
+	 * @param filename
+	 *            The name of the file to be created
+	 * @param model
+	 *            The counter being exported
+	 */
+	public static void saveCounter(TrieCharSeqCounter tcsc, String filename) {
+		// Create File
+		File f = new File("./resources/counters/" + filename + ".txt");
+		System.out.println("SAVING: " + f.getAbsolutePath());
+		OutputStream out;
+		try {
+			// Establish Output Stream
+			out = new FileOutputStream(f);
+			tcsc.writeTo(out);
+			BufferedOutputStream bOutput = new BufferedOutputStream(out);
+			// Dump model to Output Stream
+			tcsc.writeTo(bOutput);
+			// Close Stream
+			bOutput.close();
+		} catch (IOException e) {
+			System.out.println(e.getMessage());
+			e.printStackTrace();
+		}
+	}
+
+	/**
+	 * Method for loading an TrieCharSeqCounter object from the disc
+	 * 
+	 * @param filename
+	 *            The file to be loaded
+	 * @return The counter containing the data from the loaded file
+	 */
+	public static TrieCharSeqCounter loadCounter(String filename) {
+		TrieCharSeqCounter tcsc = null;
+		// Create File
+		File f = new File("./resources/counters/" + filename + ".txt");
+		System.out.println("LOADING: " + f.getName());
+		try {
+			// Establish Input Stream
+			InputStream input;
+			input = new FileInputStream(f);
+			BufferedInputStream bInput = new BufferedInputStream(input);
+			// Read model from Input Stream
+			tcsc = TrieCharSeqCounter.readFrom(bInput);
+			// Close Stream
+			bInput.close();
+		} catch (IOException e) {
+			System.out.println(e.getMessage());
+			e.printStackTrace();
+		}
+		return tcsc;
 	}
 }

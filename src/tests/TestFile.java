@@ -10,13 +10,14 @@ import org.junit.Before;
 import org.junit.Test;
 
 import com.aliasi.lm.NGramProcessLM;
+import com.aliasi.lm.TrieCharSeqCounter;
 
 import project.AnalysisPair;
 import project.LanguageModel;
 
 public class TestFile {
 
-	NGramProcessLM model, model4, laplace;
+	NGramProcessLM model, model4, gt, wb;
 
 	/**
 	 * Setup method for initialising test variables
@@ -27,18 +28,12 @@ public class TestFile {
 	@Before
 	public void setUp() throws Exception {
 		model = LanguageModel.train(LanguageModel.createModel(3),
-				"C:/Users/Andrew/workspace/TwoTimeNLM/resources/corpus/A Tale of Two Cities - Charles Dickens.txt");
+				"./resources/corpus/A Tale of Two Cities - Charles Dickens.txt");
+		// model.setLambdaFactor(0);
 		model4 = LanguageModel.train(LanguageModel.createModel(4),
-				"C:/Users/Andrew/workspace/TwoTimeNLM/resources/corpus/A Tale of Two Cities - Charles Dickens.txt");
+				"./resources/corpus/A Tale of Two Cities - Charles Dickens.txt");
+		// model4.setLambdaFactor(0);
 	}
-
-	/*
-	 * @Test public void quick() { NGramProcessLM lm =
-	 * LanguageModel.train(LanguageModel.createModel(1),
-	 * "C:/Users/Andrew/workspace/TwoTimeNLM/resources/corpus/A Tale of Two Cities - Charles Dickens.txt"
-	 * ); for(int i = 0; i < 256; i++) { System.out.println((char)i + ": " +
-	 * lm.prob("" + (char)i)); } }
-	 */
 
 	/**
 	 * Creates Models and tests that NGram length is correct
@@ -64,7 +59,8 @@ public class TestFile {
 	@Test
 	public void testThree() {
 		AnalysisPair aP = new AnalysisPair("and", 0.007321452);
-		assertEquals("TEST3: Analysis Pair", "NGRAM A: and\nNGRAM B: null\nDATA A: null\nDATA B: null\nPROB: 0.007321452", aP.toString());
+		assertEquals("TEST3: Analysis Pair",
+				"NGRAM A: and\nNGRAM B: null\nDATA A: null\nDATA B: null\nPROB: 0.007321452", aP.toString());
 	}
 
 	/**
@@ -84,8 +80,11 @@ public class TestFile {
 	public void testFive() {
 		LanguageModel.saveToFile("testfile", model);
 		NGramProcessLM model2 = LanguageModel.loadFromFile("testfile");
-		assertEquals("TEST5: Saving/Loading Model to/from File", (int) (model2.prob("and") * 1000),
-				(int) (model.prob("and") * 1000));
+		int i = (int) model2.prob("and") * 1000;
+		int j = (int) model.prob("and") * 1000;
+		File f = new File("./resources/models/testfile.txt");
+		f.delete();
+		assertEquals("TEST5: Saving/Loading Model to/from File", i, j);
 	}
 
 	/**
@@ -122,12 +121,17 @@ public class TestFile {
 	 * Language Smoothing Test (Laplace)
 	 * 
 	 */
-	// @Test
+	@Test
 	public void testEight() {
-		NGramProcessLM lm = LanguageModel.createModel(3);
-		laplace = LanguageModel.smoothingLaplace(model, model.maxNGram());
-
-		assertEquals("TEST8: Laplace Smoothing", true, laplace.prob("g,!") > lm.prob("g,!"));
+		int n = 3;
+		String s = "g,!";
+		TrieCharSeqCounter lm = new TrieCharSeqCounter(n);
+		lm = LanguageModel.trainTCSC(lm, n, "./resources/corpus/A Tale of Two Cities - Charles Dickens.txt");
+		TrieCharSeqCounter laplace = new TrieCharSeqCounter(n);
+		laplace = LanguageModel.smoothingLaplace(laplace, n);
+		laplace = LanguageModel.trainTCSC(laplace, n, "./resources/corpus/A Tale of Two Cities - Charles Dickens.txt");
+		System.out.println("LAPLACE: " + laplace.count(s) + ", BASE: " + lm.count(s));
+		assertEquals("TEST8: Laplace Smoothing", true, laplace.count(s) > lm.count(s));
 	}
 
 	/**
@@ -175,7 +179,7 @@ public class TestFile {
 			System.out.println("char: " + f[i]);
 			System.out.println("int val: " + Integer.valueOf((int) f[i]));
 		}
-		char[] c = { 2, 'C', 'a', 'r', 'e', ' ', 't', 'h', 'e', ' ', 't', 'h' };
+		char[] c = { 2, 'C', 'h', 'a', 'd', 'o', 'w', ' ', 'y', 'g', 's', 'e' };
 		assertEquals("TEST12: Simple Decrypt", new String(c), LanguageModel.simpleSolver(f, model)[0]);
 	}
 
@@ -183,32 +187,136 @@ public class TestFile {
 	 * Testing the final more complex solver solution for retaining an amount of
 	 * best guesses and extending from there
 	 * 
-	 * @throws IOException Exception for the IO complexities
+	 * @throws IOException
+	 *             Exception for the IO complexities
 	 */
 	@Test
 	public void testThirteen() throws IOException {
 		FileWriter fw = new FileWriter("./newfile.txt");
-		fw.append(new String(
-				createXOR(((char) 2 + "this is the test!").toCharArray(), ((char) 2 + "i am also to test").toCharArray())));
+		fw.append(new String(createXOR(((char) 2 + "this is the test!").toCharArray(),
+				((char) 2 + "I am also to test").toCharArray())));
 		File f = new File("./newfile.txt");
 		fw.close();
 		int x = 3;
-		String[] output = LanguageModel.solver(f, model, x);
-		for(int i = 0; i < 3; i++) {
+		String[] output = LanguageModel.solver(f, model, x, false);
+		for (int i = 0; i < 3; i++) {
 			System.out.println("i: " + i);
-			System.out.println("A: " + output[i]);
-			System.out.println("B: " + output[i+3]);
+			System.out.println("A: " + output[i].substring(4));
+			System.out.println("B: " + output[i + 3].substring(4));
 		}
-		String o = output[4].substring(3, 20);
-		assertEquals("TEST12: Simple Decrypt", "I the the to ys'!", o);
+		String o = output[0].substring(3, 20);
+		assertEquals("TEST13: Complex Decrypt", "t as also to you ", o);
 		f.delete();
-			
+	}
+
+	/**
+	 * Testing the language smoothing for a Good-Turing Solution
+	 */
+	@Test
+	public void testFourteen() {
+		int n = 3;
+		String s = "g,!";
+		TrieCharSeqCounter lm = new TrieCharSeqCounter(n);
+		lm = LanguageModel.trainTCSC(lm, n, "./resources/corpus/A Tale of Two Cities - Charles Dickens.txt");
+		TrieCharSeqCounter gt = new TrieCharSeqCounter(n);
+		gt = LanguageModel.trainTCSC(gt, n, "./resources/corpus/A Tale of Two Cities - Charles Dickens.txt");
+		gt = LanguageModel.smoothingGoodTuring(gt, n);
+		System.out.println("GT: " + gt.count(s) + ", BASE: " + lm.count(s));
+		assertEquals("TEST14: Good Turing Smoothing", true, gt.count(s) > lm.count(s));
+	}
+
+	/**
+	 * Testing the language smoothing for a Witten-Bell Solution
+	 */
+	@Test
+	public void testFifteen() {
+		int n = 3;
+		String s = "g,!";
+		TrieCharSeqCounter lm = new TrieCharSeqCounter(n);
+		lm = LanguageModel.trainTCSC(lm, n, "./resources/corpus/A Tale of Two Cities - Charles Dickens.txt");
+		TrieCharSeqCounter wb = new TrieCharSeqCounter(n);
+		wb = LanguageModel.trainTCSC(wb, n, "./resources/corpus/A Tale of Two Cities - Charles Dickens.txt");
+		wb = LanguageModel.smoothingWittenBell(wb, n);
+		System.out.println("WB: " + wb.count(s) + ", BASE: " + lm.count(s));
+		assertEquals("TEST15: Witten Bell Smoothing", true, wb.count(s) > lm.count(s));
+	}
+
+	/**
+	 * TrieCharSeqCounter for smoothing
+	 */
+	@Test
+	public void testSixteen() {
+		TrieCharSeqCounter tcsc = new TrieCharSeqCounter(3);
+		tcsc = LanguageModel.trainTCSC(tcsc, 3, "./resources/corpus/A Tale of Two Cities - Charles Dickens.txt");
+		System.out.println("TOP 10 NGRAMS:");
+		System.out.println(tcsc.topNGrams(3, 10));
+		assertEquals("TEST16: Fixing Smoothing", 7261884, tcsc.totalSequenceCount());
+	}
+
+	/**
+	 * TrieCharSeqCounter Load/Save
+	 */
+	@Test
+	public void testSeventeen() {
+		TrieCharSeqCounter tcsc = new TrieCharSeqCounter(3);
+		tcsc = LanguageModel.trainTCSC(tcsc, 3, "./resources/corpus/A Tale of Two Cities - Charles Dickens.txt");
+		LanguageModel.saveCounter(tcsc, "testcounter");
+		TrieCharSeqCounter temp = LanguageModel.loadCounter("testcounter");
+		boolean flag = (temp.totalSequenceCount() == tcsc.totalSequenceCount());
+		File f = new File("./resources/counters/testcounter.txt");
+		f.delete();
+		assertEquals("TEST17: Test Save/Load", true, flag);
+	}
+
+	/**
+	 * @throws IOException
+	 * 
+	 */
+	@Test
+	public void testEighteen() throws IOException {
+		int n = 3;
+		int x = 3;
+		FileWriter fw = new FileWriter("./resources/ciphertext/newfile.txt");
+		TrieCharSeqCounter tcsc = new TrieCharSeqCounter(n);
+		tcsc = LanguageModel.trainTCSC(tcsc, n, "./resources/corpus/A Tale of Two Cities - Charles Dickens.txt");
+		fw.append(new String(createXOR(("this is the test!").toCharArray(), ("I am also to test").toCharArray())));
+		File f = new File("./resources/ciphertext/newfile.txt");
+		fw.close();
+		String[] output = LanguageModel.TCSCSolver(f, tcsc, n, x, false);
+		f.delete();
+		for (int i = 0; i < 3; i++) {
+			System.out.println("i: " + i);
+			System.out.println("A: " + output[i].substring(4));
+			System.out.println("B: " + output[i + 3].substring(4));
+		}
+		String o = output[3].substring(3, 20);
+		assertEquals("TEST18: TCSC Decrypt", "l a t ander ander", o);
 	}
 
 	/*
 	 * @Test public void test() { assertEquals("TEST:", 0, 0); }
 	 */
 
+	/**
+	 * TODO: JAVADOC
+	 * 
+	 * @param a
+	 * @param b
+	 * @throws IOException
+	 */
+	public void createXORFile(String a, String b) throws IOException {
+		FileWriter fw = new FileWriter("./newfile.txt");
+		fw.append(new String(createXOR(a.toCharArray(), b.toCharArray())));
+		fw.close();
+	}
+
+	/**
+	 * TODO: JAVADOC
+	 * 
+	 * @param a
+	 * @param b
+	 * @return
+	 */
 	public static char[] createXOR(char[] a, char[] b) {
 		char[] output = new char[a.length];
 		for (int i = 0; i < a.length; i++) {
