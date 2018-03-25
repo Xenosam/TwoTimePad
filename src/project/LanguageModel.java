@@ -99,7 +99,7 @@ public class LanguageModel {
 			System.out.println("Invalid Input");
 			fail = true;
 		}
-		if (!fail) {
+		if (!fail && newItem) {
 			// Choose Language Smoothing
 			System.out.println("Use Smoothing? <Y/N>");
 			s = ui.next();
@@ -125,6 +125,38 @@ public class LanguageModel {
 				}
 			} else if (s.equals("N") || s.equals("n")) {
 				TCSC = true;
+			} else {
+				System.out.println("Invalid Input");
+				fail = true;
+			}
+		}
+		// Ask to Save model
+		if (!fail && newItem) {
+			System.out.println("Save Model To Resources? <Y/N>");
+			s = ui.next();
+			if (s.equals("Y") || s.equals("y")) {
+				System.out.println("Enter Filename: <string>");
+				s = ui.next();
+				File f = new File("./resources/models/" + s + ".txt");
+				if (f.exists()) {
+					System.out.println("File Exists, Delete and Recreate? <Y/N>");
+					s = ui.next();
+					if (s.equals("Y") || s.equals("y")) {
+						f.delete();
+						saveToFile((s), model);
+						saveCounter(counter, s);
+					} else if (s.equals("N") || s.equals("n")) {
+						System.out.println("Continuing");
+					} else {
+						System.out.println("Invalid Input");
+						fail = true;
+					}
+				} else {
+					saveToFile((s), model);
+					saveCounter(counter, s);
+				}
+			} else if (s.equals("N") || s.equals("n")) {
+				System.out.println("Continuing");
 			} else {
 				System.out.println("Invalid Input");
 				fail = true;
@@ -197,38 +229,6 @@ public class LanguageModel {
 				fail = true;
 			}
 		}
-		// Ask to Save model
-		if (!fail && newItem) {
-			System.out.println("Save Model To Resources? <Y/N>");
-			s = ui.next();
-			if (s.equals("Y") || s.equals("y")) {
-				System.out.println("Enter Filename: <string>");
-				s = ui.next();
-				File f = new File("./resources/models/" + s + ".txt");
-				if (f.exists()) {
-					System.out.println("File Exists, Delete and Recreate? <Y/N>");
-					s = ui.next();
-					if (s.equals("Y") || s.equals("y")) {
-						f.delete();
-						saveToFile((s), model);
-						saveCounter(counter, s);
-					} else if (s.equals("N") || s.equals("n")) {
-						System.out.println("Continuing");
-					} else {
-						System.out.println("Invalid Input");
-						fail = true;
-					}
-				} else {
-					saveToFile((s), model);
-					saveCounter(counter, s);
-				}
-			} else if (s.equals("N") || s.equals("n")) {
-				System.out.println("Continuing");
-			} else {
-				System.out.println("Invalid Input");
-				fail = true;
-			}
-		}
 		ui.close();
 	}
 
@@ -288,11 +288,11 @@ public class LanguageModel {
 					for (int i = 0; i < 256; i++) {
 						char a = (char) i;
 						char b = cXOR[i];
-						double ap = (double) tempCounter.count("" + a) / (double) tempCounter.totalSequenceCount();
-						double bp = (double) tempCounter.count("" + b) / (double) tempCounter.totalSequenceCount();
+						double ap = (double) tempCounter.count("" + a) / (double) counter.totalSequenceCount();
+						double bp = (double) tempCounter.count("" + b) / (double) counter.totalSequenceCount();
 						System.out.println("A: " + a + ", P: " + ap);
 						System.out.println("B: " + b + ", P: " + bp);
-						temp[i] = new AnalysisPair("" + a, "" + b, -Math.log(ap * bp), "" + a, "" + b);
+						temp[i] = new AnalysisPair("" + a, "" + b, Math.log(ap + bp), "" + a, "" + b);
 					}
 					// Sort
 					temp = quickSort(0, 255, temp);
@@ -330,11 +330,11 @@ public class LanguageModel {
 							char b = cXOR[i];
 							String s = aP.getNGram() + a;
 							String t = aP.getNGram2() + b;
-							double ap = (double) tempCounter.count(s) / (double) tempCounter.totalSequenceCount();
-							double bp = (double) tempCounter.count(t) / (double) tempCounter.totalSequenceCount();
+							double ap = (double) tempCounter.count(s) / (double) counter.totalSequenceCount();
+							double bp = (double) tempCounter.count(t) / (double) counter.totalSequenceCount();
 							System.out.println("A: " + s + ", P: " + ap);
 							System.out.println("B: " + t + ", P: " + bp);
-							temp[i] = new AnalysisPair(s, t, -Math.log(ap * bp), aP.getData1(), aP.getData2());
+							temp[i] = new AnalysisPair(s, t, Math.log(ap + bp), aP.getData1(), aP.getData2());
 							temp[i].addData(a, b);
 						}
 						// Sort
@@ -381,8 +381,11 @@ public class LanguageModel {
 							double bp = (double) counter.count(t) / (double) counter.totalSequenceCount();
 							System.out.println("A: " + s + ", P: " + ap);
 							System.out.println("B: " + t + ", P: " + bp);
-							temp[i] = new AnalysisPair(s, t, -Math.log(ap * bp), aP.getData1(), aP.getData2());
+							temp[i] = new AnalysisPair(s, t, Math.log(ap + bp), aP.getData1(), aP.getData2());
 							temp[i].addData(a, b);
+							// / (double) counter.totalSequenceCount()
+							// -Math.log(ap * bp)
+
 						}
 						// Sort
 						temp = quickSort(0, 255, temp);
