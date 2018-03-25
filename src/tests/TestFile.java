@@ -201,8 +201,8 @@ public class TestFile {
 		String[] output = LanguageModel.solver(f, model, x, false);
 		for (int i = 0; i < 3; i++) {
 			System.out.println("i: " + i);
-			System.out.println("A: " + output[i]);
-			System.out.println("B: " + output[i + 3]);
+			System.out.println("A: " + output[i].substring(4));
+			System.out.println("B: " + output[i + 3].substring(4));
 		}
 		String o = output[0].substring(3, 20);
 		assertEquals("TEST13: Complex Decrypt", "t as also to you ", o);
@@ -219,8 +219,8 @@ public class TestFile {
 		TrieCharSeqCounter lm = new TrieCharSeqCounter(n);
 		lm = LanguageModel.trainTCSC(lm, n, "./resources/corpus/A Tale of Two Cities - Charles Dickens.txt");
 		TrieCharSeqCounter gt = new TrieCharSeqCounter(n);
-		gt = LanguageModel.smoothingGoodTuring(gt, n);
 		gt = LanguageModel.trainTCSC(gt, n, "./resources/corpus/A Tale of Two Cities - Charles Dickens.txt");
+		gt = LanguageModel.smoothingGoodTuring(gt, n);
 		System.out.println("GT: " + gt.count(s) + ", BASE: " + lm.count(s));
 		assertEquals("TEST14: Good Turing Smoothing", true, gt.count(s) > lm.count(s));
 	}
@@ -235,8 +235,8 @@ public class TestFile {
 		TrieCharSeqCounter lm = new TrieCharSeqCounter(n);
 		lm = LanguageModel.trainTCSC(lm, n, "./resources/corpus/A Tale of Two Cities - Charles Dickens.txt");
 		TrieCharSeqCounter wb = new TrieCharSeqCounter(n);
-		wb = LanguageModel.smoothingLaplace(wb, n);
 		wb = LanguageModel.trainTCSC(wb, n, "./resources/corpus/A Tale of Two Cities - Charles Dickens.txt");
+		wb = LanguageModel.smoothingWittenBell(wb, n);
 		System.out.println("WB: " + wb.count(s) + ", BASE: " + lm.count(s));
 		assertEquals("TEST15: Witten Bell Smoothing", true, wb.count(s) > lm.count(s));
 	}
@@ -286,8 +286,8 @@ public class TestFile {
 		f.delete();
 		for (int i = 0; i < 3; i++) {
 			System.out.println("i: " + i);
-			System.out.println("A: " + output[i]);
-			System.out.println("B: " + output[i + 3]);
+			System.out.println("A: " + output[i].substring(4));
+			System.out.println("B: " + output[i + 3].substring(4));
 		}
 		String o = output[3].substring(3, 20);
 		assertEquals("TEST18: TCSC Decrypt", "l a t ander ander", o);
