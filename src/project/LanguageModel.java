@@ -94,6 +94,12 @@ public class LanguageModel {
 				model = train(model, file.toString() + "/" + child.getName());
 				counter = trainTCSC(counter, n, file.toString() + "/" + child.getName());
 			}
+
+		} else {
+			System.out.println("Invalid Input");
+			fail = true;
+		}
+		if (!fail) {
 			// Choose Language Smoothing
 			System.out.println("Use Smoothing? <Y/N>");
 			s = ui.next();
@@ -111,50 +117,50 @@ public class LanguageModel {
 					TCSC = true;
 					counter = smoothingWittenBell(counter, n);
 				} else if (i == 4) {
-					// Automated Execution
-					System.out.println("Simple or Complex Solver? <S/C>");
-					s = ui.next();
-					if (s.equals("C") || s.equals("c")) {
-						System.out.println("Enter Ciphertext Filename: <string>");
-						s = "./resources/ciphertext/" + ui.next() + ".txt";
-						if (new File(s).exists()) {
-							int x;
-							File f = new File(s);
-							System.out.println("Enter The Amount Of Results To Keep Each Pass: <int>");
-							x = Integer.valueOf(ui.next());
-							String[] output = solver(f, model, x, true);
-							for (int j = 0; j < (output.length / 2); j++) {
-								System.out.println("i: " + j);
-								System.out.println("A: " + output[j]);
-								System.out.println("B: " + output[j + (output.length / 2)]);
-							}
-						} else {
-							System.out.println("File Does Not Exist");
-							fail = true;
-						}
-					} else if (s.equals("S") || s.equals("s")) {
-						System.out.println("Enter Ciphertext Message: <string>");
-						s = ui.next();
-						String[] output = simpleSolver(s.toCharArray(), model);
-						System.out.println("A: " + output[0] + "\nB: " + output[1]);
-					} else {
-						System.out.println("Invalid Input");
-						fail = true;
-					}
+					TCSC = false;
+					System.out.println("CONTINUE");
 				} else {
 					System.out.println("Invalid Input");
 					fail = true;
 				}
 			} else if (s.equals("N") || s.equals("n")) {
-				model.setLambdaFactor(0);
-				System.out.println("Continuing");
+				TCSC = true;
 			} else {
 				System.out.println("Invalid Input");
 				fail = true;
 			}
-		} else {
-			System.out.println("Invalid Input");
-			fail = true;
+		}
+		if (!fail && !TCSC) {
+			// Automated Execution
+			System.out.println("Simple or Complex Solver? <S/C>");
+			s = ui.next();
+			if (s.equals("C") || s.equals("c")) {
+				System.out.println("Enter Ciphertext Filename: <string>");
+				s = "./resources/ciphertext/" + ui.next() + ".txt";
+				if (new File(s).exists()) {
+					int x;
+					File f = new File(s);
+					System.out.println("Enter The Amount Of Results To Keep Each Pass: <int>");
+					x = Integer.valueOf(ui.next());
+					String[] output = solver(f, model, x, true);
+					for (int j = 0; j < (output.length / 2); j++) {
+						System.out.println("i: " + j);
+						System.out.println("A: " + output[j].substring(4));
+						System.out.println("B: " + output[j + (output.length / 2)].substring(4));
+					}
+				} else {
+					System.out.println("File Does Not Exist");
+					fail = true;
+				}
+			} else if (s.equals("S") || s.equals("s")) {
+				System.out.println("Enter Ciphertext Message: <string>");
+				s = ui.next();
+				String[] output = simpleSolver(s.toCharArray(), model);
+				System.out.println("A: " + output[0] + "\nB: " + output[1]);
+			} else {
+				System.out.println("Invalid Input");
+				fail = true;
+			}
 		}
 		if (!fail && TCSC) {
 			// Implemented Execution
@@ -171,8 +177,8 @@ public class LanguageModel {
 					String[] output = TCSCSolver(f, counter, n, x, true);
 					for (int j = 0; j < (output.length / 2); j++) {
 						System.out.println("i: " + j);
-						System.out.println("A: " + output[j]);
-						System.out.println("B: " + output[j + (output.length / 2)]);
+						System.out.println("A: " + output[j].substring(4));
+						System.out.println("B: " + output[j + (output.length / 2)].substring(4));
 					}
 				} else if (s.equals("N") || s.equals("n")) {
 					String[] output = TCSCSolver(f, counter, n, x, false);
@@ -264,26 +270,29 @@ public class LanguageModel {
 				if (loop == 0) {
 					// First Character
 					AnalysisPair[] temp = new AnalysisPair[256];
+					TrieCharSeqCounter tempCounter = null;
 					// Create Counter
-					TrieCharSeqCounter tempCounter = new TrieCharSeqCounter(1);
-					if (in == false) {
-						tempCounter = trainTCSC(tempCounter, loop + 1,
-								"./resources/corpus/A Tale of Two Cities - Charles Dickens.txt");
+					if (n != 1) {
+						tempCounter = new TrieCharSeqCounter(1);
+						if (in == false) {
+							tempCounter = trainTCSC(tempCounter, loop + 1,
+									"./resources/corpus/A Tale of Two Cities - Charles Dickens.txt");
+						} else {
+							System.out.println("Enter filename for n:" + (loop + 1) + " Model");
+							tempCounter = loadCounter(ui.next());
+						}
 					} else {
-						System.out.println("Enter filename for n:" + (loop + 1) + " Model");
-						tempCounter = loadCounter(ui.nextLine());
+						tempCounter = counter;
 					}
-					tempCounter = trainTCSC(tempCounter, 1,
-							"./resources/corpus/A Tale of Two Cities - Charles Dickens.txt");
 					// Extend
 					for (int i = 0; i < 256; i++) {
 						char a = (char) i;
 						char b = cXOR[i];
-						double ap = tempCounter.count("" + a);
-						double bp = tempCounter.count("" + b);
+						double ap = (double) tempCounter.count("" + a) / (double) tempCounter.totalSequenceCount();
+						double bp = (double) tempCounter.count("" + b) / (double) tempCounter.totalSequenceCount();
 						System.out.println("A: " + a + ", P: " + ap);
 						System.out.println("B: " + b + ", P: " + bp);
-						temp[i] = new AnalysisPair("" + a, "" + b, ap + bp, "" + a, "" + b);
+						temp[i] = new AnalysisPair("" + a, "" + b, -Math.log(ap * bp), "" + a, "" + b);
 					}
 					// Sort
 					temp = quickSort(0, 255, temp);
@@ -307,7 +316,7 @@ public class LanguageModel {
 								"./resources/corpus/A Tale of Two Cities - Charles Dickens.txt");
 					} else {
 						System.out.println("Enter filename for n:" + (loop + 1) + " Model");
-						tempCounter = loadCounter(ui.nextLine());
+						tempCounter = loadCounter(ui.next());
 					}
 					for (AnalysisPair aP : workQueue) {
 						if (aP == null) {
@@ -321,11 +330,11 @@ public class LanguageModel {
 							char b = cXOR[i];
 							String s = aP.getNGram() + a;
 							String t = aP.getNGram2() + b;
-							double ap = tempCounter.count(s);
-							double bp = tempCounter.count(t);
+							double ap = (double) tempCounter.count(s) / (double) tempCounter.totalSequenceCount();
+							double bp = (double) tempCounter.count(t) / (double) tempCounter.totalSequenceCount();
 							System.out.println("A: " + s + ", P: " + ap);
 							System.out.println("B: " + t + ", P: " + bp);
-							temp[i] = new AnalysisPair(s, t, ap + bp, aP.getData1(), aP.getData2());
+							temp[i] = new AnalysisPair(s, t, -Math.log(ap * bp), aP.getData1(), aP.getData2());
 							temp[i].addData(a, b);
 						}
 						// Sort
@@ -356,7 +365,7 @@ public class LanguageModel {
 						// Character at or beyond limit
 						String q = aP.getNGram();
 						String r = aP.getNGram2();
-						if (loop != n - 1) {
+						if (loop != n - 1 && n != 1) {
 							// Trim
 							q = new String(stringTrim(q.toCharArray())).substring(0, n - 2);
 							r = new String(stringTrim(r.toCharArray())).substring(0, n - 2);
@@ -368,11 +377,11 @@ public class LanguageModel {
 							char b = cXOR[i];
 							String s = q + a;
 							String t = r + b;
-							double ap = counter.count(s);
-							double bp = counter.count(t);
+							double ap = (double) counter.count(s) / (double) counter.totalSequenceCount();
+							double bp = (double) counter.count(t) / (double) counter.totalSequenceCount();
 							System.out.println("A: " + s + ", P: " + ap);
 							System.out.println("B: " + t + ", P: " + bp);
-							temp[i] = new AnalysisPair(s, t, ap + bp, aP.getData1(), aP.getData2());
+							temp[i] = new AnalysisPair(s, t, -Math.log(ap * bp), aP.getData1(), aP.getData2());
 							temp[i].addData(a, b);
 						}
 						// Sort
@@ -468,7 +477,7 @@ public class LanguageModel {
 				index = 0;
 				input = new AnalysisPair[x * x];
 
-				System.out.println("C: " + c + ", (" + currentChar + ")");
+				// System.out.println("C: " + c + ", (" + currentChar + ")");
 
 				if (loop == 0) {
 					// First Character
@@ -493,8 +502,8 @@ public class LanguageModel {
 						char b = cXOR[i];
 						double ap = tempModel.prob("" + a);
 						double bp = tempModel.prob("" + b);
-						System.out.println("A: " + a + ", P: " + ap);
-						System.out.println("B: " + b + ", P: " + bp);
+						// System.out.println("A: " + a + ", P: " + ap);
+						// System.out.println("B: " + b + ", P: " + bp);
 						temp[i] = new AnalysisPair("" + a, "" + b, Math.log(ap * bp), "" + a, "" + b);
 					}
 					// Sort
@@ -502,8 +511,8 @@ public class LanguageModel {
 					// Filter
 					for (int i = 0; i < x; i++) {
 						AnalysisPair curr = temp[255 - i];
-						System.out.println("A: " + curr.getNGram());
-						System.out.println("B: " + curr.getNGram2());
+						// System.out.println("A: " + curr.getNGram());
+						// System.out.println("B: " + curr.getNGram2());
 						workQueue[i] = new AnalysisPair(curr.getNGram(), curr.getNGram2(), curr.getProbability());
 						workQueue[i].addData(curr.getNGram().charAt(0), curr.getNGram2().charAt(0));
 					}
@@ -515,8 +524,7 @@ public class LanguageModel {
 					// Train
 					NGramProcessLM tempModel = createModel(loop + 1);
 					if (in == false) {
-						tempModel = train(tempModel,
-								"./resources/corpus/A Tale of Two Cities - Charles Dickens.txt");
+						tempModel = train(tempModel, "./resources/corpus/A Tale of Two Cities - Charles Dickens.txt");
 					} else {
 						System.out.println("Enter filename for n:" + (loop + 1) + " Model");
 						tempModel = loadFromFile(ui.next());
@@ -821,18 +829,6 @@ public class LanguageModel {
 	}
 
 	/**
-	 * TODO: JAVADOC
-	 * 
-	 * @param tcsc
-	 * @param n
-	 * @return
-	 */
-	public static AnalysisPair[] createTCSCAPModel(TrieCharSeqCounter tcsc, int n) {
-		// TODO Finish Method
-		return null;
-	}
-
-	/**
 	 * Creates a model using the AnalysisPair class based off of a preexistant
 	 * NGramProcessLM model
 	 * 
@@ -1092,7 +1088,7 @@ public class LanguageModel {
 		int count = 0;
 		String tempS;
 		int val = (int) Math.pow(256, n);
-		AnalysisPair[] aP = new AnalysisPair[val];
+		long total = counter.totalSequenceCount();
 		// Fill string with ASCII(0) characters
 		for (int i = 0; i < n; i++) {
 			cSeq[i] = Character.valueOf((char) 0);
@@ -1108,8 +1104,6 @@ public class LanguageModel {
 			temp = Integer.valueOf((int) cSeq[j]);
 			cSeq[j] = Character.valueOf((char) (temp + 1));
 			tempS = String.valueOf(cSeq);
-			// Trains for an extra result
-			aP[i] = new AnalysisPair(tempS, counter.count(tempS));
 			// Moves back to least significant character
 			j = n - 1;
 			// Check for smooth
@@ -1117,13 +1111,13 @@ public class LanguageModel {
 				count++;
 			}
 		}
-		double offset = count / counter.totalSequenceCount();
-		System.out.println("OFFSET: " + offset);
-		for (int i = 0; i < val; i++) {
-			if (aP[i].getProbability() == 0) {
-				//
-			}
-		}
+		// Console Information
+		double offset = (double) count / (double) total;
+		double negOffset = 1 - offset;
+		System.out.println("TOTALT: " + total);
+		System.out.println("COUNT: " + count);
+		System.out.println("OFFSET: " + (double) offset);
+		System.out.println("NEG OFFSET: " + (double) negOffset);
 		// Returns the smoothed model
 		return counter;
 	}
