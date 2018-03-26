@@ -210,20 +210,19 @@ public class TestFile {
 	}
 
 	/**
-	 * Testing the language smoothing for a Good-Turing Solution
+	 * Testing the language smoothing for a Good-Turing Solution - Retired Due to Time Constraints
+	 * 
+	 * @Test public void testFourteen() { int n = 3; String s = "g,!";
+	 *       TrieCharSeqCounter lm = new TrieCharSeqCounter(n); lm =
+	 *       LanguageModel.trainTCSC(lm, n, "./resources/corpus/A Tale of Two
+	 *       Cities - Charles Dickens.txt"); TrieCharSeqCounter gt = new
+	 *       TrieCharSeqCounter(n); gt = LanguageModel.trainTCSC(gt, n,
+	 *       "./resources/corpus/A Tale of Two Cities - Charles Dickens.txt");
+	 *       gt = LanguageModel.smoothingGoodTuring(gt, n);
+	 *       System.out.println("GT: " + gt.count(s) + ", BASE: " +
+	 *       lm.count(s)); assertEquals("TEST14: Good Turing Smoothing", true,
+	 *       gt.count(s) > lm.count(s)); }
 	 */
-	@Test
-	public void testFourteen() {
-		int n = 3;
-		String s = "g,!";
-		TrieCharSeqCounter lm = new TrieCharSeqCounter(n);
-		lm = LanguageModel.trainTCSC(lm, n, "./resources/corpus/A Tale of Two Cities - Charles Dickens.txt");
-		TrieCharSeqCounter gt = new TrieCharSeqCounter(n);
-		gt = LanguageModel.trainTCSC(gt, n, "./resources/corpus/A Tale of Two Cities - Charles Dickens.txt");
-		gt = LanguageModel.smoothingGoodTuring(gt, n);
-		System.out.println("GT: " + gt.count(s) + ", BASE: " + lm.count(s));
-		assertEquals("TEST14: Good Turing Smoothing", true, gt.count(s) > lm.count(s));
-	}
 
 	/**
 	 * Testing the language smoothing for a Witten-Bell Solution
@@ -293,7 +292,7 @@ public class TestFile {
 		String o = output[3].substring(3, 20);
 		assertEquals("TEST18: TCSC Decrypt", "l a t ander ander", o);
 	}
-	
+
 	/**
 	 * Test for agressive additive smooth
 	 */
@@ -310,7 +309,7 @@ public class TestFile {
 		System.out.println("AX: " + ax.count(s) + ", BASE: " + lm.count(s));
 		assertEquals("TEST19: ADD X Smoothing", true, ax.count(s) > lm.count(s));
 	}
-	
+
 	/*
 	 * @Test public void test() { assertEquals("TEST:", 0, 0); }
 	 */

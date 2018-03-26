@@ -105,15 +105,12 @@ public class LanguageModel {
 			s = ui.next();
 			if (s.equals("Y") || s.equals("y")) {
 				System.out.println(
-						"Select Method: <1/2/3/4/5>\n1: Laplace\n2: Good-Turing\n3: Witten-Bell\n4: AddX\n5: Witten-Bell(LingPipe)");
+						"Select Method: <1/2/3/4/>\n1: Laplace\n2: Witten-Bell\n3: AddX\n4: Witten-Bell(LingPipe)");
 				i = Integer.valueOf(ui.next());
 				if (i == 1) {
 					TCSC = true;
 					counter = smoothingLaplace(counter, n);
 				} else if (i == 2) {
-					TCSC = true;
-					counter = smoothingGoodTuring(counter, n);
-				} else if (i == 3) {
 					System.out.println("Enter offset value: <1-9>");
 					int x = Integer.valueOf(ui.next());
 					if(x < 1 || x > 9 ) {
@@ -123,12 +120,12 @@ public class LanguageModel {
 						counter = smoothingWittenBell(counter, n, x);
 						TCSC = true;
 					}
-				} else if(i == 4) {
-					System.out.print("Enter value to add to each count: <int>");
+				} else if(i == 3) {
+					System.out.println("Enter value to add to each count: <int>");
 					int x = Integer.valueOf(ui.next());
 					TCSC = true;
 					counter = smoothingAddX(counter, n, x);
-				} else if (i == 5) {
+				} else if (i == 4) {
 					TCSC = false;
 					System.out.println("CONTINUE");
 				} else {
@@ -445,6 +442,9 @@ public class LanguageModel {
 	 *             Error for File IO
 	 */
 	public static boolean createCiphertext(char[] a, char[] b, String filename) throws IOException {
+		if(new File("./resources/ciphertext/" + filename + ".txt").exists()) {
+			return true;
+		}
 		if (a.length != b.length) {
 			System.out.println("Strings must be the same length");
 			System.out.println(new String(a) + "\nLength: " + a.length);
@@ -1051,43 +1051,6 @@ public class LanguageModel {
 		return counter;
 	}
 
-	/**
-	 * TODO: JAVADOC
-	 * 
-	 * @param model
-	 * @param n
-	 * @return
-	 */
-	public static TrieCharSeqCounter smoothingGoodTuring(TrieCharSeqCounter counter, int n) {
-		// Follows the same process as the AP model production
-		char[] cSeq = new char[n];
-		int temp;
-		String tempS;
-		int val = (int) Math.pow(256, n);
-		AnalysisPair[] aP = new AnalysisPair[val];
-		// Fill string with ASCII(0) characters
-		for (int i = 0; i < n; i++) {
-			cSeq[i] = Character.valueOf((char) 0);
-		}
-		int j = n - 1;
-		for (int i = 0; i < val; i++) {
-			// Moves onto the next significant character if it's 256
-			while (Integer.valueOf((int) cSeq[j]) == 256) {
-				cSeq[j] = Character.valueOf((char) 0);
-				j--;
-			}
-			// Steps the character
-			temp = Integer.valueOf((int) cSeq[j]);
-			cSeq[j] = Character.valueOf((char) (temp + 1));
-			tempS = String.valueOf(cSeq);
-			// Trains for an extra result
-			aP[i] = new AnalysisPair(tempS, counter.count(tempS));
-			// Moves back to least significant character
-			j = n - 1;
-		}
-		// Returns the smoothed model
-		return counter;
-	}
 
 	/**
 	 * Redistrabutes probability mass from values with counts greater than 0 to
@@ -1102,10 +1065,8 @@ public class LanguageModel {
 		// Follows the same process as the AP model production
 		char[] cSeq = new char[n];
 		int temp;
-		int count = 0;
 		String tempS;
 		int val = (int) Math.pow(256, n);
-		long total = counter.totalSequenceCount();
 		// Fill string with ASCII(0) characters
 		for (int i = 0; i < n; i++) {
 			cSeq[i] = Character.valueOf((char) 0);
@@ -1130,13 +1091,6 @@ public class LanguageModel {
 				counter.incrementSubstrings(tempS, 10-x);
 			}
 		}
-		// Console Information
-		double offset = (double) count / (double) total;
-		double negOffset = 1 - offset;
-		System.out.println("TOTALT: " + total);
-		System.out.println("COUNT: " + count);
-		System.out.println("OFFSET: " + (double) offset);
-		System.out.println("NEG OFFSET: " + (double) negOffset);
 		// Returns the smoothed model
 		return counter;
 	}
