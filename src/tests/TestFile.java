@@ -231,12 +231,13 @@ public class TestFile {
 	@Test
 	public void testFifteen() {
 		int n = 3;
+		int x = 3;
 		String s = "g,!";
 		TrieCharSeqCounter lm = new TrieCharSeqCounter(n);
 		lm = LanguageModel.trainTCSC(lm, n, "./resources/corpus/A Tale of Two Cities - Charles Dickens.txt");
 		TrieCharSeqCounter wb = new TrieCharSeqCounter(n);
 		wb = LanguageModel.trainTCSC(wb, n, "./resources/corpus/A Tale of Two Cities - Charles Dickens.txt");
-		wb = LanguageModel.smoothingWittenBell(wb, n);
+		wb = LanguageModel.smoothingWittenBell(wb, n, x);
 		System.out.println("WB: " + wb.count(s) + ", BASE: " + lm.count(s));
 		assertEquals("TEST15: Witten Bell Smoothing", true, wb.count(s) > lm.count(s));
 	}
@@ -292,7 +293,24 @@ public class TestFile {
 		String o = output[3].substring(3, 20);
 		assertEquals("TEST18: TCSC Decrypt", "l a t ander ander", o);
 	}
-
+	
+	/**
+	 * Test for agressive additive smooth
+	 */
+	@Test
+	public void testNineteen() {
+		int n = 3;
+		int x = 3;
+		String s = "g,!";
+		TrieCharSeqCounter lm = new TrieCharSeqCounter(n);
+		lm = LanguageModel.trainTCSC(lm, n, "./resources/corpus/A Tale of Two Cities - Charles Dickens.txt");
+		TrieCharSeqCounter ax = new TrieCharSeqCounter(n);
+		ax = LanguageModel.trainTCSC(ax, n, "./resources/corpus/A Tale of Two Cities - Charles Dickens.txt");
+		ax = LanguageModel.smoothingAddX(ax, x, n);
+		System.out.println("AX: " + ax.count(s) + ", BASE: " + lm.count(s));
+		assertEquals("TEST19: ADD X Smoothing", true, ax.count(s) > lm.count(s));
+	}
+	
 	/*
 	 * @Test public void test() { assertEquals("TEST:", 0, 0); }
 	 */
