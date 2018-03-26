@@ -231,12 +231,13 @@ public class TestFile {
 	@Test
 	public void testFifteen() {
 		int n = 3;
+		int x = 3;
 		String s = "g,!";
 		TrieCharSeqCounter lm = new TrieCharSeqCounter(n);
 		lm = LanguageModel.trainTCSC(lm, n, "./resources/corpus/A Tale of Two Cities - Charles Dickens.txt");
 		TrieCharSeqCounter wb = new TrieCharSeqCounter(n);
 		wb = LanguageModel.trainTCSC(wb, n, "./resources/corpus/A Tale of Two Cities - Charles Dickens.txt");
-		wb = LanguageModel.smoothingWittenBell(wb, n);
+		wb = LanguageModel.smoothingWittenBell(wb, n, x);
 		System.out.println("WB: " + wb.count(s) + ", BASE: " + lm.count(s));
 		assertEquals("TEST15: Witten Bell Smoothing", true, wb.count(s) > lm.count(s));
 	}

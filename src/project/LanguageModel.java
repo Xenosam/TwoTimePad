@@ -105,7 +105,7 @@ public class LanguageModel {
 			s = ui.next();
 			if (s.equals("Y") || s.equals("y")) {
 				System.out.println(
-						"Select Method: <1/2/3>\n1: Laplace \n2: Good-Turing \n3: Witten-Bell \n4: Witten-Bell(LingPipe)");
+						"Select Method: <1/2/3/4/5>\n1: Laplace\n2: Good-Turing\n3: Witten-Bell\n4: AddX\n5: Witten-Bell(LingPipe)");
 				i = Integer.valueOf(ui.next());
 				if (i == 1) {
 					TCSC = true;
@@ -114,9 +114,21 @@ public class LanguageModel {
 					TCSC = true;
 					counter = smoothingGoodTuring(counter, n);
 				} else if (i == 3) {
+					System.out.println("Enter offset value: <1-9>");
+					int x = Integer.valueOf(ui.next());
+					if(x < 1 || x > 9 ) {
+						System.out.println("Invalid Input");
+						fail = true;
+					} else {
+						counter = smoothingWittenBell(counter, n, x);
+						TCSC = true;
+					}
+				} else if(i == 4) {
+					System.out.print("Enter value to add to each count: <int>");
+					int x = Integer.valueOf(ui.next());
 					TCSC = true;
-					counter = smoothingWittenBell(counter, n);
-				} else if (i == 4) {
+					counter = smoothingAddX(counter, n, x);
+				} else if (i == 5) {
 					TCSC = false;
 					System.out.println("CONTINUE");
 				} else {
@@ -1078,13 +1090,15 @@ public class LanguageModel {
 	}
 
 	/**
-	 * TODO: JAVADOC
+	 * Redistrabutes probability mass from values with counts greater than 0 to
+	 * values with counts that are 0
 	 * 
-	 * @param counter
-	 * @param n
+	 * @param counter the TrieCharSeqCounter to be smoothed
+	 * @param n the length of the ngram for the model
+	 * @param x
 	 * @return
 	 */
-	public static TrieCharSeqCounter smoothingWittenBell(TrieCharSeqCounter counter, int n) {
+	public static TrieCharSeqCounter smoothingWittenBell(TrieCharSeqCounter counter, int n, int x) {
 		// Follows the same process as the AP model production
 		char[] cSeq = new char[n];
 		int temp;
@@ -1111,9 +1125,9 @@ public class LanguageModel {
 			j = n - 1;
 			// Check for smooth
 			if (counter.count(tempS) > 0) {
-				counter.incrementSubstrings(tempS, 3);
+				counter.incrementSubstrings(tempS, x);
 			} else {
-				counter.incrementSubstrings(tempS, 7);
+				counter.incrementSubstrings(tempS, 10-x);
 			}
 		}
 		// Console Information
@@ -1243,12 +1257,15 @@ public class LanguageModel {
 	 * Smoothing method for adding a predetermined integer to each count,
 	 * potentially (and usually) a more aggressive form of LaPlace smoothing
 	 * 
-	 * @param counter the TrieCharSeqCounter to smooth 
-	 * @param x the amount to add to each value
-	 * @param n the length of the ngram
+	 * @param counter
+	 *            the TrieCharSeqCounter to smooth
+	 * @param x
+	 *            the amount to add to each value
+	 * @param n
+	 *            the length of the ngram
 	 * @return the smoothed counter
 	 */
-	public static TrieCharSeqCounter smoothingAddX(TrieCharSeqCounter counter, int x, int n) {
+	public static TrieCharSeqCounter smoothingAddX(TrieCharSeqCounter counter, int n, int x) {
 		// Follows the same process as the AP model production
 		char[] cSeq = new char[n];
 		int temp;
