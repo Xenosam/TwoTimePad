@@ -1110,8 +1110,10 @@ public class LanguageModel {
 			// Moves back to least significant character
 			j = n - 1;
 			// Check for smooth
-			if (counter.count(tempS) > 1) {
-				count++;
+			if (counter.count(tempS) > 0) {
+				counter.incrementSubstrings(tempS, 3);
+			} else {
+				counter.incrementSubstrings(tempS, 7);
 			}
 		}
 		// Console Information
@@ -1235,5 +1237,43 @@ public class LanguageModel {
 			e.printStackTrace();
 		}
 		return tcsc;
+	}
+
+	/**
+	 * Smoothing method for adding a predetermined integer to each count,
+	 * potentially (and usually) a more aggressive form of LaPlace smoothing
+	 * 
+	 * @param counter the TrieCharSeqCounter to smooth 
+	 * @param x the amount to add to each value
+	 * @param n the length of the ngram
+	 * @return the smoothed counter
+	 */
+	public static TrieCharSeqCounter smoothingAddX(TrieCharSeqCounter counter, int x, int n) {
+		// Follows the same process as the AP model production
+		char[] cSeq = new char[n];
+		int temp;
+		String tempS;
+		// Fill string with ASCII(0) characters
+		for (int i = 0; i < n; i++) {
+			cSeq[i] = Character.valueOf((char) 0);
+		}
+		int j = n - 1;
+		for (int i = 0; i < Math.pow(256, n); i++) {
+			// Moves onto the next significant character if it's 256
+			while (Integer.valueOf((int) cSeq[j]) == 256) {
+				cSeq[j] = Character.valueOf((char) 0);
+				j--;
+			}
+			// Steps the character
+			temp = Integer.valueOf((int) cSeq[j]);
+			cSeq[j] = Character.valueOf((char) (temp + 1));
+			tempS = String.valueOf(cSeq);
+			// Trains for an extra result
+			counter.incrementSubstrings(tempS, x);
+			// Moves back to least significant character
+			j = n - 1;
+		}
+		// Returns the smoothed model
+		return counter;
 	}
 }
